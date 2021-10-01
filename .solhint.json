@@ -1,0 +1,8 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "compiler-version": ["error", "^0.7.6"],
+    "func-visibility": ["warn", { "ignoreConstructors": true }],
+    "max-line-warn": ["error", 100]
+  }
+}
