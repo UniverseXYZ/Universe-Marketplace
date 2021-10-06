@@ -7,6 +7,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "./HasSecondarySaleFees.sol";
+import "./interfaces/INftTransferProxy.sol";
+import "./interfaces/IERC20TransferProxy.sol";
 
 contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
     using SafeMathUpgradeable for uint256;
@@ -14,6 +16,9 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
     uint256 public ordersCount;
     uint256 public daoFeeBps;
     address public daoAddress;
+
+    address public erc20TransferProxy;
+    address public nftTransferProxy;
 
     mapping(uint256 => ERC721FloorBidOrder) public orders;
 
@@ -85,9 +90,16 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         _;
     }
 
-    constructor(address _daoAddress, uint256 _daoFeeBps) {
+    function __ERC721FloorBidMatcher_init(
+        address _daoAddress,
+        uint256 _daoFeeBps,
+        address _erc20TransferProxy,
+        address _nftTransferProxy
+    ) external initializer {
         daoAddress = _daoAddress;
         daoFeeBps = _daoFeeBps;
+        erc20TransferProxy = _erc20TransferProxy;
+        nftTransferProxy = _nftTransferProxy;
     }
 
     function createBuyOrder(
@@ -103,13 +115,12 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
             "Wrong number of tokens"
         );
         require(amount > 0, "Wrong amount");
-        require(
-            IERC20Upgradeable(paymentTokenAddress).transferFrom(
-                msg.sender,
-                address(this),
-                amount
-            ),
-            "Transfer failed"
+
+        IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
+            IERC20Upgradeable(paymentTokenAddress),
+            msg.sender,
+            address(this),
+            amount
         );
 
         ordersCount = ordersCount.add(1);
@@ -154,7 +165,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
                 order.tokenPrice
             );
 
-            IERC721Upgradeable(order.erc721TokenAddress).transferFrom(
+            INftTransferProxy(nftTransferProxy).erc721safeTransferFrom(
+                IERC721Upgradeable(order.erc721TokenAddress),
                 msg.sender,
                 order.creator,
                 tokenIds[i]
@@ -173,22 +185,18 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
             );
         }
 
-        require(
-            IERC20Upgradeable(order.paymentTokenAddress).transferFrom(
-                address(this),
-                daoAddress,
-                daoFee
-            ),
-            "Transfer failed"
+        IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
+            IERC20Upgradeable(order.paymentTokenAddress),
+            address(this),
+            daoAddress,
+            daoFee
         );
 
-        require(
-            IERC20Upgradeable(order.paymentTokenAddress).transferFrom(
-                address(this),
-                msg.sender,
-                amountToPay.sub(daoFee).sub(totalSecondaryFees)
-            ),
-            "Transfer failed"
+        IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
+            IERC20Upgradeable(order.paymentTokenAddress),
+            address(this),
+            msg.sender,
+            amountToPay.sub(daoFee).sub(totalSecondaryFees)
         );
 
         order.numberOfTokens = order.numberOfTokens.sub(tokenIds.length);
@@ -205,13 +213,11 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         require(order.endTime > block.timestamp, "Order expired");
         require(order.creator == msg.sender, "Only creator can cancel");
 
-        require(
-            IERC20Upgradeable(order.paymentTokenAddress).transferFrom(
-                address(this),
-                msg.sender,
-                order.amount
-            ),
-            "Transfer failed"
+        IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
+            IERC20Upgradeable(order.paymentTokenAddress),
+            address(this),
+            msg.sender,
+            order.amount
         );
 
         order.orderStatus = OrderStatus.CANCELLED;
@@ -235,13 +241,11 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         require(order.endTime < block.timestamp, "Order not expired");
         require(order.creator == msg.sender, "Only creator can cancel");
 
-        require(
-            IERC20Upgradeable(order.paymentTokenAddress).transferFrom(
-                address(this),
-                msg.sender,
-                order.amount
-            ),
-            "Transfer failed"
+        IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
+            IERC20Upgradeable(order.paymentTokenAddress),
+            address(this),
+            msg.sender,
+            order.amount
         );
 
         order.orderStatus = OrderStatus.EXPIRED;
@@ -298,16 +302,13 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
                 value = interimFee.remainingValue;
 
                 if (interimFee.feeValue > 0) {
-                    IERC20Upgradeable token = IERC20Upgradeable(
-                        paymentTokenAddress
-                    );
-                    require(
-                        token.transfer(
+                    IERC20TransferProxy(erc20TransferProxy)
+                        .erc20safeTransferFrom(
+                            IERC20Upgradeable(paymentTokenAddress),
+                            address(this),
                             address(recipients[i]),
                             interimFee.feeValue
-                        ),
-                        "Transfer Failed"
-                    );
+                        );
                     totalFees = totalFees.add(interimFee.feeValue);
                 }
             }

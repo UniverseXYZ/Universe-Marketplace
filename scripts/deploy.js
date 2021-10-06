@@ -3,14 +3,8 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
+require("dotenv").config();
 const hre = require("hardhat");
-
-const rinkeby = {
-  communityWallet: "0xe627243104a101ca59a2c629adbcd63a782e837f",
-  erc20TransferProxy: "0x2fce8435f0455edc702199741411dbcd1b7606ca",
-  transferProxy: "0x7d47126a2600e22eab9ed6cf0e515678727779a6",
-  royaltiesRegistry: "0xdA8e7D4cF7BA4D5912a68c1e40d3D89828fA6EE8",
-};
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -21,16 +15,29 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
+
+  const TransferProxy = await hre.ethers.getContractFactory("TransferProxy");
+  const transferProxy = await hre.upgrades.deployProxy(TransferProxy, [], {
+    initializer: "__TransferProxy_init",
+  });
+  await transferProxy.deployed();
+
+  const ERC20TransferProxy = await hre.ethers.getContractFactory(
+    "ERC20TransferProxy"
+  );
+  const erc20TransferProxy = await hre.upgrades.deployProxy(
+    ERC20TransferProxy,
+    [],
+    {
+      initializer: "__ERC20TransferProxy_init",
+    }
+  );
+  await erc20TransferProxy.deployed();
+
   const ExchangeV2 = await hre.ethers.getContractFactory("ExchangeV2");
   const exchangeV2 = await hre.upgrades.deployProxy(
     ExchangeV2,
-    [
-      rinkeby.transferProxy,
-      rinkeby.erc20TransferProxy,
-      0,
-      rinkeby.communityWallet,
-      rinkeby.royaltiesRegistry,
-    ],
+    [transferProxy.address, erc20TransferProxy.address],
     { initializer: "__ExchangeV2_init" }
   );
   await exchangeV2.deployed();
@@ -39,13 +46,21 @@ async function main() {
     "ERC721FloorBidMatcher"
   );
 
-  const erc721FloorBidMatcher = await ERC721FloorBidMatcher.deploy(
-    "0x0000000000000000000000000000000000000000",
-    1000
+  const erc721FloorBidMatcher = await hre.upgrades.deployProxy(
+    ERC721FloorBidMatcher,
+    [
+      process.env.DAO_ADDRESS,
+      0,
+      erc20TransferProxy.address,
+      transferProxy.address,
+    ],
+    { initializer: "__ERC721FloorBidMatcher_init" }
   );
 
   await erc721FloorBidMatcher.deployed();
 
+  console.log("ERC20 Transfer Proxy deployed to:", erc20TransferProxy.address);
+  console.log("NFT Transfer Proxy deployed to:", transferProxy.address);
   console.log("Exchange V2 deployed to:", exchangeV2.address);
   console.log("ERC721 Floor Bid Matcher:", erc721FloorBidMatcher.address);
 }
