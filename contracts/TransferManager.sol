@@ -7,8 +7,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "./lib/LibAsset.sol";
 import "./interfaces/IRoyaltiesProvider.sol";
-import "./lib/LibERC721LazyMint.sol";
-import "./lib/LibERC1155LazyMint.sol";
 import "./lib/LibFill.sol";
 import "./lib/LibFeeSide.sol";
 import "./lib/LibOrderDataV1.sol";
@@ -142,12 +140,6 @@ abstract contract TransferManager is OwnableUpgradeable, ITransferManager {
         if (matchNft.assetClass == LibAsset.ERC1155_ASSET_CLASS || matchNft.assetClass == LibAsset.ERC721_ASSET_CLASS) {
             (address token, uint tokenId) = abi.decode(matchNft.data, (address, uint));
             return royaltiesRegistry.getRoyalties(token, tokenId);
-        } else if (matchNft.assetClass == LibERC1155LazyMint.ERC1155_LAZY_ASSET_CLASS) {
-            (address token, LibERC1155LazyMint.Mint1155Data memory data) = abi.decode(matchNft.data, (address, LibERC1155LazyMint.Mint1155Data));
-            return data.royalties;
-        } else if (matchNft.assetClass == LibERC721LazyMint.ERC721_LAZY_ASSET_CLASS) {
-            (address token, LibERC721LazyMint.Mint721Data memory data) = abi.decode(matchNft.data, (address, LibERC721LazyMint.Mint721Data));
-            return data.royalties;
         }
         LibPart.Part[] memory empty;
         return empty;
