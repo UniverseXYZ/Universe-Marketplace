@@ -4,8 +4,8 @@
 pragma solidity >=0.6.9 <0.8.0;
 pragma abicoder v2;
 
-import "./OperatorRole.sol";
-import "./interfaces/INftTransferProxy.sol";
+import "../operator/OperatorRole.sol";
+import "../interfaces/INftTransferProxy.sol";
 
 contract TransferProxy is INftTransferProxy, Initializable, OperatorRole {
 

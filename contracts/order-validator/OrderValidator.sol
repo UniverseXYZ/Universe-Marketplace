@@ -2,9 +2,9 @@
 
 pragma solidity 0.7.6;
 
-import "./ERC1271.sol";
-import "./lib/LibOrder.sol";
-import "./lib/LibSignature.sol";
+import "../interfaces/ERC1271.sol";
+import "../lib/LibOrder.sol";
+import "../lib/LibSignature.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/drafts/EIP712Upgradeable.sol";

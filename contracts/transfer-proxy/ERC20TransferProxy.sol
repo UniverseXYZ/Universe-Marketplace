@@ -2,8 +2,8 @@
 
 pragma solidity 0.7.6;
 
-import "./OperatorRole.sol";
-import "./interfaces/IERC20TransferProxy.sol";
+import "../operator/OperatorRole.sol";
+import "../interfaces/IERC20TransferProxy.sol";
 
 contract ERC20TransferProxy is IERC20TransferProxy, Initializable, OperatorRole {
 

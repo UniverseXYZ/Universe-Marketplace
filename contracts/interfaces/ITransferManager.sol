@@ -5,7 +5,7 @@ pragma abicoder v2;
 
 import "../lib/LibAsset.sol";
 import "../lib/LibFill.sol";
-import "../TransferExecutor.sol";
+import "../transfer-executor/TransferExecutor.sol";
 
 abstract contract ITransferManager is ITransferExecutor {
     bytes4 constant TO_MAKER = bytes4(keccak256("TO_MAKER"));

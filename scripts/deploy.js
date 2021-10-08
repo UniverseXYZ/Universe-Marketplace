@@ -34,13 +34,15 @@ async function main() {
   );
   await erc20TransferProxy.deployed();
 
-  const ExchangeV2 = await hre.ethers.getContractFactory("ExchangeV2");
-  const exchangeV2 = await hre.upgrades.deployProxy(
-    ExchangeV2,
-    [transferProxy.address, erc20TransferProxy.address],
-    { initializer: "__ExchangeV2_init" }
+  const UniverseMarketplace = await hre.ethers.getContractFactory(
+    "UniverseMarketplace"
   );
-  await exchangeV2.deployed();
+  const universeMarketplace = await hre.upgrades.deployProxy(
+    UniverseMarketplace,
+    [transferProxy.address, erc20TransferProxy.address],
+    { initializer: "__UniverseMarketplace_init" }
+  );
+  await universeMarketplace.deployed();
 
   const ERC721FloorBidMatcher = await hre.ethers.getContractFactory(
     "ERC721FloorBidMatcher"
@@ -61,7 +63,7 @@ async function main() {
 
   console.log("ERC20 Transfer Proxy deployed to:", erc20TransferProxy.address);
   console.log("NFT Transfer Proxy deployed to:", transferProxy.address);
-  console.log("Exchange V2 deployed to:", exchangeV2.address);
+  console.log("Exchange V2 deployed to:", universeMarketplace.address);
   console.log("ERC721 Floor Bid Matcher:", erc721FloorBidMatcher.address);
 }
 

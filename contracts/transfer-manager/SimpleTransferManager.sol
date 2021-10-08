@@ -2,7 +2,7 @@
 
 pragma solidity 0.7.6;
 
-import "./interfaces/ITransferManager.sol";
+import "../interfaces/ITransferManager.sol";
 
 abstract contract SimpleTransferManager is ITransferManager {
     using SafeMathUpgradeable for uint;

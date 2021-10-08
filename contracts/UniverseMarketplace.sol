@@ -3,12 +3,12 @@
 pragma solidity 0.7.6;
 pragma abicoder v2;
 
-import "./ExchangeV2Core.sol";
-import "./TransferManager.sol";
+import "./UniverseMarketplaceCore.sol";
+import "./transfer-manager/TransferManager.sol";
 import "./interfaces/IRoyaltiesProvider.sol";
 
-contract ExchangeV2 is ExchangeV2Core, TransferManager {
-    function __ExchangeV2_init(
+contract UniverseMarketplace is UniverseMarketplaceCore, TransferManager {
+    function __UniverseMarketplace_init(
         INftTransferProxy _transferProxy,
         IERC20TransferProxy _erc20TransferProxy,
         uint newProtocolFee,

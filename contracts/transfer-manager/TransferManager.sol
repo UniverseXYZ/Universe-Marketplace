@@ -5,15 +5,15 @@ pragma abicoder v2;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
-import "./lib/LibAsset.sol";
-import "./interfaces/IRoyaltiesProvider.sol";
-import "./lib/LibFill.sol";
-import "./lib/LibFeeSide.sol";
-import "./lib/LibOrderDataV1.sol";
-import "./interfaces/ITransferManager.sol";
-import "./TransferExecutor.sol";
-import "./lib/LibOrderData.sol";
-import "./lib/BpLibrary.sol";
+import "../lib/LibAsset.sol";
+import "../interfaces/IRoyaltiesProvider.sol";
+import "../lib/LibFill.sol";
+import "../lib/LibFeeSide.sol";
+import "../lib/LibOrderDataV1.sol";
+import "../interfaces/ITransferManager.sol";
+import "../transfer-executor/TransferExecutor.sol";
+import "../lib/LibOrderData.sol";
+import "../lib/BpLibrary.sol";
 
 abstract contract TransferManager is OwnableUpgradeable, ITransferManager {
     using BpLibrary for uint;

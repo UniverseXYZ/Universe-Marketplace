@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
-import "./HasSecondarySaleFees.sol";
+import "./royalties/HasSecondarySaleFees.sol";
 import "./interfaces/INftTransferProxy.sol";
 import "./interfaces/IERC20TransferProxy.sol";
 

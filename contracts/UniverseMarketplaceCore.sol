@@ -5,13 +5,13 @@ pragma abicoder v2;
 
 import "./lib/LibFill.sol";
 import "./lib/LibOrder.sol";
-import "./OrderValidator.sol";
-import "./AssetMatcher.sol";
-import "./TransferExecutor.sol";
+import "./order-validator/OrderValidator.sol";
+import "./asset-matcher/AssetMatcher.sol";
+import "./transfer-executor/TransferExecutor.sol";
 import "./interfaces/ITransferManager.sol";
 import "./lib/LibTransfer.sol";
 
-abstract contract ExchangeV2Core is Initializable, OwnableUpgradeable, AssetMatcher, TransferExecutor, OrderValidator, ITransferManager {
+abstract contract UniverseMarketplaceCore is Initializable, OwnableUpgradeable, AssetMatcher, TransferExecutor, OrderValidator, ITransferManager {
     using SafeMathUpgradeable for uint;
     using LibTransfer for address;
 
