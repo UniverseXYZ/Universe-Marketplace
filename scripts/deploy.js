@@ -34,12 +34,30 @@ async function main() {
   );
   await erc20TransferProxy.deployed();
 
+  const RoyaltiesRegistry = await hre.ethers.getContractFactory(
+    "RoyaltiesRegistry"
+  );
+  const royaltiesRegistry = await hre.upgrades.deployProxy(
+    RoyaltiesRegistry,
+    [],
+    {
+      initializer: "__RoyaltiesRegistry_init",
+    }
+  );
+  await royaltiesRegistry.deployed();
+
   const UniverseMarketplace = await hre.ethers.getContractFactory(
     "UniverseMarketplace"
   );
   const universeMarketplace = await hre.upgrades.deployProxy(
     UniverseMarketplace,
-    [transferProxy.address, erc20TransferProxy.address],
+    [
+      transferProxy.address,
+      erc20TransferProxy.address,
+      process.env.DAO_FEE,
+      process.env.DAO_ADDRESS,
+      royaltiesRegistry.address,
+    ],
     { initializer: "__UniverseMarketplace_init" }
   );
   await universeMarketplace.deployed();
@@ -52,7 +70,7 @@ async function main() {
     ERC721FloorBidMatcher,
     [
       process.env.DAO_ADDRESS,
-      0,
+      process.env.DAO_FEE,
       erc20TransferProxy.address,
       transferProxy.address,
     ],
@@ -63,7 +81,8 @@ async function main() {
 
   console.log("ERC20 Transfer Proxy deployed to:", erc20TransferProxy.address);
   console.log("NFT Transfer Proxy deployed to:", transferProxy.address);
-  console.log("Exchange V2 deployed to:", universeMarketplace.address);
+  console.log("Royalties Registry deployed to:", transferProxy.address);
+  console.log("Universe Marketplace deployed to:", universeMarketplace.address);
   console.log("ERC721 Floor Bid Matcher:", erc721FloorBidMatcher.address);
 }
 
