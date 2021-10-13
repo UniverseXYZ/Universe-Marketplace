@@ -6,9 +6,10 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
-import "./royalties/HasSecondarySaleFees.sol";
 import "./interfaces/INftTransferProxy.sol";
 import "./interfaces/IERC20TransferProxy.sol";
+import "./interfaces/IRoyaltiesProvider.sol";
+import "./lib/LibPart.sol";
 
 contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
     using SafeMathUpgradeable for uint256;
@@ -19,6 +20,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
 
     address public erc20TransferProxy;
     address public nftTransferProxy;
+    address public royaltiesRegistry;
 
     mapping(uint256 => ERC721FloorBidOrder) public orders;
 
@@ -94,12 +96,14 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         address _daoAddress,
         uint256 _daoFeeBps,
         address _erc20TransferProxy,
-        address _nftTransferProxy
+        address _nftTransferProxy,
+        address _royaltiesRegistry
     ) external initializer {
         daoAddress = _daoAddress;
         daoFeeBps = _daoFeeBps;
         erc20TransferProxy = _erc20TransferProxy;
         nftTransferProxy = _nftTransferProxy;
+        royaltiesRegistry = _royaltiesRegistry;
     }
 
     function createBuyOrder(
@@ -115,6 +119,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
             "Wrong number of tokens"
         );
         require(amount > 0, "Wrong amount");
+
+        IERC20Upgradeable(paymentTokenAddress).approve(erc20TransferProxy, amount);
 
         IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
             IERC20Upgradeable(paymentTokenAddress),
@@ -264,6 +270,18 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         daoFeeBps = _daoFeeBps;
     }
 
+    function setERC20TransferProxy(address _erc20TransferProxy) external onlyDAO {
+        erc20TransferProxy = _erc20TransferProxy;
+    }
+
+    function setNFTTransferProxy(address _nftTransferProxy) external onlyDAO {
+        nftTransferProxy = _nftTransferProxy;
+    }
+
+    function setRoylatiesRegistry(address _royaltiesRegistry) external onlyDAO {
+        royaltiesRegistry = _royaltiesRegistry;
+    }
+
     function getSoldTokensFromOrder(uint256 orderId)
         public
         view
@@ -279,25 +297,16 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         uint256 tokenId,
         uint256 amount
     ) internal returns (uint256) {
-        bool hasFees = IERC721Upgradeable(erc721TokenAddress).supportsInterface(
-            _INTERFACE_ID_FEES
-        );
+        LibPart.Part[] memory fees = IRoyaltiesProvider(royaltiesRegistry).getRoyalties(erc721TokenAddress, tokenId);
+
         uint256 totalFees = 0;
-        if (hasFees) {
-            HasSecondarySaleFees withFees = HasSecondarySaleFees(
-                erc721TokenAddress
-            );
-            address payable[] memory recipients = withFees.getFeeRecipients(
-                tokenId
-            );
-            uint256[] memory fees = withFees.getFeeBps(tokenId);
-            require(fees.length == recipients.length, "Splits should be equal");
+        if (fees.length > 0) {
             uint256 value = amount;
 
             for (uint256 i = 0; i < fees.length && i < 5; i += 1) {
                 SecondaryFee memory interimFee = subFee(
                     value,
-                    amount.mul(fees[i]).div(10000)
+                    amount.mul(fees[i].value).div(10000)
                 );
                 value = interimFee.remainingValue;
 
@@ -306,7 +315,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
                         .erc20safeTransferFrom(
                             IERC20Upgradeable(paymentTokenAddress),
                             address(this),
-                            address(recipients[i]),
+                            address(fees[i].account),
                             interimFee.feeValue
                         );
                     totalFees = totalFees.add(interimFee.feeValue);

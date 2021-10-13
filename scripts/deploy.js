@@ -73,6 +73,7 @@ async function main() {
       process.env.DAO_FEE,
       erc20TransferProxy.address,
       transferProxy.address,
+      royaltiesRegistry.address,
     ],
     { initializer: "__ERC721FloorBidMatcher_init" }
   );
@@ -81,7 +82,7 @@ async function main() {
 
   console.log("ERC20 Transfer Proxy deployed to:", erc20TransferProxy.address);
   console.log("NFT Transfer Proxy deployed to:", transferProxy.address);
-  console.log("Royalties Registry deployed to:", transferProxy.address);
+  console.log("Royalties Registry deployed to:", royaltiesRegistry.address);
   console.log("Universe Marketplace deployed to:", universeMarketplace.address);
   console.log("ERC721 Floor Bid Matcher:", erc721FloorBidMatcher.address);
 }

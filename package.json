@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "3.4.0",
+    "@openzeppelin/contracts": "^3.4.1",
     "hardhat": "^2.6.4"
   },
   "keywords": [],

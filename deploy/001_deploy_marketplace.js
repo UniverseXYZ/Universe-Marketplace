@@ -83,6 +83,7 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
           process.env.DAO_FEE,
           erc20TransferProxy.address,
           nftTransferProxy.address,
+          royaltiesRegistry.address,
         ],
       },
     },
