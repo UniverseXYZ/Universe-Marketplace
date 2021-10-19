@@ -1,42 +1,32 @@
-# Advanced Sample Hardhat Project
+# **The Universe Marketplace contracts consist of several building blocks:**
 
-This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.
+- **TransferManager** - Responsible for transferring all assets. The manager supports different types of fees, also it supports different beneficiaries.
+- **TransferExecutor** - Responsible for executing the transfers from one side of the order to the other side of the order. The transfer executor calls the respective TransferProxy, depending on the asset type - ERC721, ERC721_BUNDLE, ERC20, ERC1155.
+- **TransferProxies** - Rhe actual contracts which are approved by the users to transfer their assets - currently there is ERC20TransferProxy and NFTTransferProxy
+- **MarketplaceCore** - Responsible for matching orders through the matchOrders function. Extends TransferManager and TransferExecutor
+- **ERC721FloorBidMatcher** - This contract uses the same transfer proxies, but works with onchain transactions and escrow of the user’s funds, which are placed with a buy order.
 
-The project comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts. It also comes with a variety of other tools, preconfigured to work with the project code.
-
-Try running some of the following tasks:
+# Build the project
 
 ```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-npx hardhat help
-REPORT_GAS=true npx hardhat test
-npx hardhat coverage
-npx hardhat run scripts/deploy.js
-node scripts/deploy.js
-npx eslint '**/*.js'
-npx eslint '**/*.js' --fix
-npx prettier '**/*.{json,sol,md}' --check
-npx prettier '**/*.{json,sol,md}' --write
-npx solhint 'contracts/**/*.sol'
-npx solhint 'contracts/**/*.sol' --fix
+yarn
+yarn compile
+```
+
+# Run tests
+
+```shell
+yarn test
+```
+
+# Deploy to live network
+
+```shell
+yarn deploy rinkeby
 ```
 
 # Etherscan verification
 
-To try out Etherscan verification, you first need to deploy a contract to an Ethereum network that's supported by Etherscan, such as Ropsten.
-
-In this project, copy the .env.template file to a file named .env, and then edit it to fill in the details. Enter your Etherscan API key, your Ropsten node URL (eg from Alchemy), and the private key of the account which will send the deployment transaction. With a valid .env file in place, first deploy your contract:
-
 ```shell
-hardhat run --network ropsten scripts/deploy.js
-```
-
-Then, copy the deployment address and paste it in to replace `DEPLOYED_CONTRACT_ADDRESS` in this command:
-
-```shell
-npx hardhat verify --network ropsten DEPLOYED_CONTRACT_ADDRESS "Hello, Hardhat!"
+yarn etherscan-verify rinkeby --address
 ```
