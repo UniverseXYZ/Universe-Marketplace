@@ -57,7 +57,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         uint256 amount,
         uint256 endTime,
         uint256 time,
-        address creator
+        address creator,
+        uint256 orderId
     );
 
     event LogMatchBuyOrder(
@@ -66,7 +67,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         address paymentTokenAddress,
         uint256 amount,
         uint256 time,
-        address taker
+        address taker,
+        uint256 orderId
     );
 
     event LogCancelOrder(
@@ -75,7 +77,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         uint256 amount,
         uint256 endTime,
         uint256 time,
-        address creator
+        address creator,
+        uint256 orderId
     );
 
     event LogTokenWithdrawal(
@@ -84,7 +87,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         uint256 amount,
         uint256 endTime,
         uint256 time,
-        address creator
+        address creator,
+        uint256 orderId
     );
 
     modifier onlyDAO() {
@@ -147,7 +151,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
             amount,
             endTime,
             block.timestamp,
-            msg.sender
+            msg.sender,
+            orderId
         );
     }
 
@@ -187,7 +192,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
                 order.paymentTokenAddress,
                 order.tokenPrice,
                 block.timestamp,
-                msg.sender
+                msg.sender,
+                orderId
             );
         }
 
@@ -234,7 +240,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
             order.amount,
             order.endTime,
             block.timestamp,
-            msg.sender
+            msg.sender,
+            orderId
         );
     }
 
@@ -262,7 +269,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
             order.amount,
             order.endTime,
             block.timestamp,
-            msg.sender
+            msg.sender,
+            orderId
         );
     }
 

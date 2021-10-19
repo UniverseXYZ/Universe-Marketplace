@@ -1,4 +1,3 @@
-
 const DOMAIN_TYPE = [
   {
     type: "string",
@@ -34,7 +33,7 @@ module.exports = {
   },
 
   signTypedData: function (web3, from, data) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       function cb(err, result) {
         if (err) {
           return reject(err);
@@ -73,8 +72,9 @@ module.exports = {
         send.bind(web3.currentProvider)(
           {
             jsonrpc: "2.0",
-            method: "eth_signTypedData",
-            params: [from, data],
+            method: "eth_signTypedData_v4",
+            params: [from, JSON.stringify(data)],
+            from: from,
             id: new Date().getTime(),
           },
           cb

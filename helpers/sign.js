@@ -1,4 +1,5 @@
 const util = require("ethereumjs-util");
+const { web3 } = require("hardhat");
 
 function pack(...args) {
   args = args.map((arg) => {

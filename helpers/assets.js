@@ -1,23 +1,23 @@
 const ethUtil = require("ethereumjs-util");
-const web3EthAbi = require('web3-eth-abi');
+const { web3 } = require("hardhat");
 
 function id(str) {
   return `0x${ethUtil.keccak256(str).toString("hex").substring(0, 8)}`;
 }
 
-function enc(token, tokenId) {
+function encodeToken(token, tokenId) {
   if (tokenId) {
-    return web3EthAbi.encodeParameters(
+    return web3.eth.abi.encodeParameters(
       ["address", "uint256"],
       [token, tokenId]
     );
   } else {
-    return web3EthAbi.encodeParameter("address", token);
+    return web3.eth.abi.encodeParameter("address", token);
   }
 }
 
 function encodeBundleInfo(tokenAddresses, tokenIds) {
-  return web3EthAbi.encodeParameter("tuple(address,uint256[])[]", [
+  return web3.eth.abi.encodeParameter("tuple(address,uint256[])[]", [
     [tokenAddresses[0], tokenIds[0]],
     [tokenAddresses[1], tokenIds[1]],
   ]);
@@ -50,6 +50,6 @@ module.exports = {
   ROYALTY,
   ORIGIN,
   PAYOUT,
-  enc,
+  encodeToken,
   encodeBundleInfo,
 };

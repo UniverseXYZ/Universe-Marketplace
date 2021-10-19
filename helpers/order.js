@@ -1,5 +1,5 @@
 const EIP712 = require("./EIP712");
-const web3Eth = require('web3-eth');
+const { web3 } = require("hardhat");
 
 function AssetType(assetClass, data) {
   return { assetClass, data };
@@ -56,7 +56,7 @@ const Types = {
 };
 
 async function sign(order, account, verifyingContract) {
-  const chainId = Number(await web3Eth.getChainId());
+  const chainId = Number(await web3.eth.getChainId());
   const data = EIP712.createTypeData(
     {
       name: "Exchange",
@@ -68,7 +68,7 @@ async function sign(order, account, verifyingContract) {
     order,
     Types
   );
-  return (await EIP712.signTypedData(web3, account, data)).sig;
+  return (await EIP712.signTypedData(web3, account.address, data)).sig;
 }
 
-module.exports = { AssetType, Asset, Order, sign };
+module.exports = { AssetType, Asset, Order, sign, Types };
