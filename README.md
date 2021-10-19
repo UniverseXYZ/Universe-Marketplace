@@ -1,4 +1,4 @@
-# **The Universe Marketplace contracts consist of several building blocks:**
+# **Universe Marketplace contracts:**
 
 - **TransferManager** - Responsible for transferring all assets. The manager supports different types of fees, also it supports different beneficiaries.
 - **TransferExecutor** - Responsible for executing the transfers from one side of the order to the other side of the order. The transfer executor calls the respective TransferProxy, depending on the asset type - ERC721, ERC721_BUNDLE, ERC20, ERC1155.
@@ -8,25 +8,25 @@
 
 # Build the project
 
-```shell
-yarn
-yarn compile
+```
+$ yarn
+$ yarn compile
 ```
 
 # Run tests
 
-```shell
-yarn test
+```
+$ yarn test
 ```
 
 # Deploy to live network
 
-```shell
-yarn deploy rinkeby
+```
+$ yarn deploy rinkeby
 ```
 
 # Etherscan verification
 
-```shell
-yarn etherscan-verify rinkeby --address
+```
+$ yarn etherscan-verify rinkeby --address
 ```
