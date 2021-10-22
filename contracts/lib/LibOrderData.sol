@@ -1,34 +1,28 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.7.6;
+pragma abicoder v2;
 
-import "./LibOrder.sol";
-import "./LibOrderDataV1.sol";
 import "./LibPart.sol";
+import "./LibOrder.sol";
 
 library LibOrderData {
+    bytes4 constant public ORDER_DATA = bytes4(keccak256("ORDER_DATA"));
 
-    function parse(LibOrder.Order memory order) pure internal returns (LibOrderDataV1.DataV1 memory dataOrder) {
-        if (order.dataType == LibOrderDataV1.V1) {
-            dataOrder = LibOrderDataV1.decodeOrderDataV1(order.data);
-            if (dataOrder.payouts.length == 0) {
-                dataOrder = payoutSet(order.maker, dataOrder);
-            }
-        } else if (order.dataType == 0xffffffff) {
-            dataOrder = payoutSet(order.maker, dataOrder);
-        } else {
-            revert("Unknown Order data type");
-        }
+    struct Data {
+        LibPart.Part[] revenueSplits;
     }
 
-    function payoutSet(
-        address orderAddress,
-        LibOrderDataV1.DataV1 memory dataOrderOnePayoutIn
-    ) pure internal returns (LibOrderDataV1.DataV1 memory ) {
-        LibPart.Part[] memory payout = new LibPart.Part[](1);
-        payout[0].account = payable(orderAddress);
-        payout[0].value = 10000;
-        dataOrderOnePayoutIn.payouts = payout;
-        return dataOrderOnePayoutIn;
+    function decodeOrderData(bytes memory data) internal pure returns (Data memory orderData) {
+        orderData = abi.decode(data, (Data));
+    }
+
+    function parse(LibOrder.Order memory order) pure internal returns (LibOrderData.Data memory dataOrder) {
+        if (order.dataType == ORDER_DATA) {
+            dataOrder = decodeOrderData(order.data);
+        } else {
+            LibOrderData.Data memory _dataOrder;
+            dataOrder = _dataOrder;
+        }
     }
 }

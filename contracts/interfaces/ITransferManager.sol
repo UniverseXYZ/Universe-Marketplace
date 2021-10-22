@@ -14,6 +14,8 @@ abstract contract ITransferManager is ITransferExecutor {
     bytes4 constant ROYALTY = bytes4(keccak256("ROYALTY"));
     bytes4 constant ORIGIN = bytes4(keccak256("ORIGIN"));
     bytes4 constant PAYOUT = bytes4(keccak256("PAYOUT"));
+    bytes4 constant DAO = bytes4(keccak256("DAO"));
+    bytes4 constant REVENUE_SPLIT = bytes4(keccak256("REVENUE_SPLIT"));
 
     function doTransfers(
         LibAsset.AssetType memory makeMatch,

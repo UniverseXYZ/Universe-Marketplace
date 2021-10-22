@@ -23,12 +23,20 @@ function encodeBundleInfo(tokenAddresses, tokenIds) {
   ]);
 }
 
+function encodeOrderData() {
+  return web3.eth.abi.encodeParameter("tuple(address,uint256)[]", [
+    ["0x67b93852482113375666a310ac292D61dDD4bbb9", 1000],
+    ["0x135C2FA0e47Ab3C6b37bEA403845537015f4BBc0", 2000],
+  ]);
+}
+
 const ETH = id("ETH");
 const ERC20 = id("ERC20");
 const ERC721 = id("ERC721");
 const ERC721_BUNDLE = id("ERC721_BUNDLE");
 const ERC1155 = id("ERC1155");
 const ORDER_DATA_V1 = id("V1");
+const ORDER_DATA = id("ORDER_DATA");
 const TO_MAKER = id("TO_MAKER");
 const TO_TAKER = id("TO_TAKER");
 const PROTOCOL = id("PROTOCOL");
@@ -44,6 +52,7 @@ module.exports = {
   ERC721_BUNDLE,
   ERC1155,
   ORDER_DATA_V1,
+  ORDER_DATA,
   TO_MAKER,
   TO_TAKER,
   PROTOCOL,
@@ -52,4 +61,5 @@ module.exports = {
   PAYOUT,
   encodeToken,
   encodeBundleInfo,
+  encodeOrderData,
 };
