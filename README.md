@@ -30,3 +30,11 @@ $ yarn deploy rinkeby
 ```
 $ yarn etherscan-verify rinkeby --address
 ```
+
+# Ropsetn deployments
+
+- **ERC20 Transfer Proxy** - https://ropsten.etherscan.io/address/0xfD5f9263bCAf0d3AF20f2Cb08e76d7D7c0533FDa
+- **NFT Transfer Proxy** - https://ropsten.etherscan.io/address/0x8fBF9Aa748f2091CFcAcd894ddA22f2673321a37
+- **ERC721 Floor Bid Matcher** - https://ropsten.etherscan.io/address/0xC849826BAF2247B4d12a1dE21a12d2325EF010B0
+- **Royalties Registry** - https://ropsten.etherscan.io/address/0x74FB2eDC713145830057f4c6fC4eaB0024bC9c33
+- **Universe Marketplace** - https://ropsten.etherscan.io/address/0xCB11366370C68cb1795B94fF8588Ad6Db590e15E
