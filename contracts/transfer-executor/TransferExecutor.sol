@@ -52,7 +52,7 @@ abstract contract TransferExecutor is Initializable, OwnableUpgradeable, ITransf
             INftTransferProxy(proxies[LibAsset.ERC1155_ASSET_CLASS]).erc1155safeTransferFrom(IERC1155Upgradeable(token), from, to, tokenId, asset.value, "");
         } else if (asset.assetType.assetClass == LibAsset.ERC721_BUNDLE_ASSET_CLASS) {
             (INftTransferProxy.ERC721BundleItem[] memory erc721BundleItems) = abi.decode(asset.assetType.data, (INftTransferProxy.ERC721BundleItem[]));
-            require(asset.value > 1 && asset.value <= 100, "erc721 value error");
+            require(asset.value > 1 && asset.value <= 10, "erc721 value error");
             INftTransferProxy(proxies[LibAsset.ERC721_BUNDLE_ASSET_CLASS]).erc721BundleSafeTransferFrom(erc721BundleItems, from, to);
         } else {
             ITransferProxy(proxies[asset.assetType.assetClass]).transfer(asset, from, to);

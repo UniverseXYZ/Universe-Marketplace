@@ -73,8 +73,8 @@ describe("Match Orders Tests", () => {
     await erc20TransferProxy.addOperator(universeMarketplace.address);
     await transferProxy.addOperator(universeMarketplace.address);
     await royaltiesRegistry.setRoyaltiesByToken(mockNFT.address, [
-      [accounts[5].address, 100],
-      [accounts[6].address, 100],
+      [accounts[5].address, 1000],
+      [accounts[6].address, 1000],
     ]);
 
     return {
@@ -179,7 +179,7 @@ describe("Match Orders Tests", () => {
     ).to.be.emit(universeMarketplace, "Match");
 
     const balance = await mockToken.balanceOf(accounts[1].address);
-    expect(balance).to.equal(375);
+    expect(balance).to.equal(327);
 
     const mockNFTBalance = await mockNFT.balanceOf(accounts[0].address);
     expect(mockNFTBalance).to.equal(3);
@@ -247,7 +247,7 @@ describe("Match Orders Tests", () => {
     ).to.be.emit(universeMarketplace, "Match");
 
     const balance = await mockToken.balanceOf(accounts[1].address);
-    expect(balance).to.equal(365);
+    expect(balance).to.equal(275);
 
     const mockNFTBalance = await mockNFT.balanceOf(accounts[0].address);
     expect(mockNFTBalance).to.equal(1);
@@ -309,7 +309,7 @@ describe("Match Orders Tests", () => {
     ).to.be.emit(universeMarketplace, "Match");
 
     const balanceAfter = await ethers.provider.getBalance(accounts[1].address);
-    expect(balanceAfter.sub(balanceBefore)).to.equal(146);
+    expect(balanceAfter.sub(balanceBefore)).to.equal(110);
 
     const mockNFTBalance = await mockNFT.balanceOf(accounts[0].address);
     expect(mockNFTBalance).to.equal(1);
@@ -407,7 +407,7 @@ describe("Match Orders Tests", () => {
     ).to.be.emit(universeMarketplace, "Match");
 
     const balanceAfter = await ethers.provider.getBalance(accounts[1].address);
-    expect(balanceAfter.sub(balanceBefore)).to.equal(50);
+    expect(balanceAfter.sub(balanceBefore)).to.equal(32);
 
     const mockNFTBalance = await mockNFT.balanceOf(accounts[0].address);
     expect(mockNFTBalance).to.equal(3);
@@ -486,7 +486,7 @@ describe("Match Orders Tests", () => {
     ).to.be.emit(universeMarketplace, "Match");
 
     const balanceAfter = await ethers.provider.getBalance(accounts[0].address);
-    expect(balanceAfter.sub(balanceBefore)).to.equal(46);
+    expect(balanceAfter.sub(balanceBefore)).to.equal(10);
 
     const mockNFTBalance = await mockNFT.balanceOf(accounts[1].address);
     expect(mockNFTBalance).to.equal(1);

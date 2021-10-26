@@ -11,6 +11,7 @@ import "../interfaces/IRoyaltiesProvider.sol";
 import "../lib/LibFill.sol";
 import "../lib/LibFeeSide.sol";
 import "../interfaces/ITransferManager.sol";
+import "../interfaces/INftTransferProxy.sol";
 import "../transfer-executor/TransferExecutor.sol";
 import "../lib/LibOrderData.sol";
 import "../lib/BpLibrary.sol";
@@ -32,6 +33,7 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
         bytes4 transferDirection;
         LibPart.Part[] revenueSplits;
         LibAsset.AssetType matchNft;
+        uint matchNftValue;
     }
 
     function __UniverseTransferManager_init_unchained(
@@ -84,14 +86,14 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
         LibOrderData.Data memory rightOrderData = LibOrderData.parse(rightOrder);
 
         if (feeSide == LibFeeSide.FeeSide.MAKE) {
-            FeeCalculateInfo memory feeCalculateInfo = FeeCalculateInfo(makeMatch, totalMakeValue, leftOrder.maker, TO_TAKER, rightOrderData.revenueSplits, takeMatch);
+            FeeCalculateInfo memory feeCalculateInfo = FeeCalculateInfo(makeMatch, totalMakeValue, leftOrder.maker, TO_TAKER, rightOrderData.revenueSplits, takeMatch, totalTakeValue);
             uint totalFees = transferAllFees(feeCalculateInfo);
 
             transfer(LibAsset.Asset(makeMatch, totalMakeValue.sub(totalFees)), leftOrder.maker, rightOrder.maker, PAYOUT, TO_TAKER);
             transfer(LibAsset.Asset(takeMatch, totalTakeValue), rightOrder.maker, leftOrder.maker, PAYOUT, TO_MAKER);
 
         } else if (feeSide == LibFeeSide.FeeSide.TAKE) {
-            FeeCalculateInfo memory feeCalculateInfo = FeeCalculateInfo(takeMatch, totalTakeValue, rightOrder.maker, TO_MAKER, leftOrderData.revenueSplits, makeMatch);
+            FeeCalculateInfo memory feeCalculateInfo = FeeCalculateInfo(takeMatch, totalTakeValue, rightOrder.maker, TO_MAKER, leftOrderData.revenueSplits, makeMatch, totalMakeValue);
             uint totalFees = transferAllFees(feeCalculateInfo);
 
             transfer(LibAsset.Asset(takeMatch, totalTakeValue.sub(totalFees)), rightOrder.maker, leftOrder.maker, PAYOUT, TO_MAKER);
@@ -106,8 +108,7 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
     function transferAllFees(FeeCalculateInfo memory feeCalculateInfo) internal returns (uint allFeesValue) {
         uint daoFeeValue = transferDaoFee(feeCalculateInfo.matchCalculate, feeCalculateInfo.amount, feeCalculateInfo.from, feeCalculateInfo.transferDirection);
         uint revenueSplitsValue = transferRevenueSplits(feeCalculateInfo.matchCalculate, feeCalculateInfo.amount, feeCalculateInfo.from, feeCalculateInfo.revenueSplits, feeCalculateInfo.transferDirection);
-        uint royaltiesValue = transferRoyalties(feeCalculateInfo.matchCalculate, feeCalculateInfo.matchNft, feeCalculateInfo.amount, feeCalculateInfo.from, feeCalculateInfo.transferDirection);
-    
+        uint royaltiesValue = transferRoyaltyFees(feeCalculateInfo.matchCalculate, feeCalculateInfo.matchNft, feeCalculateInfo.matchNftValue, feeCalculateInfo.amount, feeCalculateInfo.from, feeCalculateInfo.transferDirection);
         return daoFeeValue.add(revenueSplitsValue).add(royaltiesValue);
     }
 
@@ -143,25 +144,13 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
         return amount.sub(restValue);
     }
 
-    function getRoyaltiesByAssetType(LibAsset.AssetType memory matchNft) internal returns (LibPart.Part[] memory) {
-        if (matchNft.assetClass == LibAsset.ERC1155_ASSET_CLASS || matchNft.assetClass == LibAsset.ERC721_ASSET_CLASS) {
-            (address token, uint tokenId) = abi.decode(matchNft.data, (address, uint));
-            return royaltiesRegistry.getRoyalties(token, tokenId);
-        } else if (matchNft.assetClass == LibAsset.ERC721_BUNDLE_ASSET_CLASS) {
-            
-        }
-        LibPart.Part[] memory empty;
-        return empty;
-    }
-
-    function transferRoyalties(
+    function transferFees(
         LibAsset.AssetType memory matchCalculate,
-        LibAsset.AssetType memory matchNft,
+        LibPart.Part[] memory fees,
         uint amount,
         address from,
         bytes4 transferDirection
     ) internal returns (uint) {
-        LibPart.Part[] memory fees = getRoyaltiesByAssetType(matchNft);
         uint totalFees = 0;
         uint restValue = amount;
         for (uint256 i = 0; i < fees.length; i++) {
@@ -174,6 +163,31 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
         }
         require(totalFees <= 5000, "Royalties are too high (>50%)");
         return amount.sub(restValue);
+    }
+
+    function transferRoyaltyFees(
+        LibAsset.AssetType memory matchCalculate,
+        LibAsset.AssetType memory matchNft,
+        uint matchNftValue,
+        uint amount,
+        address from,
+        bytes4 transferDirection
+    ) internal returns (uint) {
+        uint256 totalAmount = 0;
+        if (matchNft.assetClass == LibAsset.ERC1155_ASSET_CLASS || matchNft.assetClass == LibAsset.ERC721_ASSET_CLASS) {
+            (address token, uint tokenId) = abi.decode(matchNft.data, (address, uint));
+            LibPart.Part[] memory fees = royaltiesRegistry.getRoyalties(token, tokenId);
+            totalAmount = transferFees(matchCalculate, fees, amount, from, transferDirection);
+        } else if (matchNft.assetClass == LibAsset.ERC721_BUNDLE_ASSET_CLASS) {
+            (INftTransferProxy.ERC721BundleItem[] memory erc721BundleItems) = abi.decode(matchNft.data, (INftTransferProxy.ERC721BundleItem[]));
+            for (uint256 i = 0; i < erc721BundleItems.length; i++) {
+                for (uint256 j = 0; j < erc721BundleItems[i].tokenIds.length; j++){
+                    LibPart.Part[] memory fees = royaltiesRegistry.getRoyalties(erc721BundleItems[i].tokenAddress, erc721BundleItems[i].tokenIds[j]);
+                    totalAmount = totalAmount.add(transferFees(matchCalculate, fees, amount.div(matchNftValue), from, transferDirection));
+                } 
+            }
+        }
+        return totalAmount;
     }
 
     function encodeOrderData(LibOrderData.Data memory data) external pure returns (bytes memory encodedOrderData) {
