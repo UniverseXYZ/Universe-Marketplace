@@ -24,8 +24,6 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
 
     mapping(uint256 => ERC721FloorBidOrder) public orders;
 
-    bytes4 private constant _INTERFACE_ID_FEES = 0xb7799584;
-
     enum OrderStatus {
         OPENED,
         PARTIALLY_EXECUTED,

@@ -2,9 +2,9 @@
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts-upgradeable/introspection/ERC165Upgradeable.sol";
+import "@openzeppelin/contracts/introspection/ERC165.sol";
 
-contract HasSecondarySaleFees is ERC165Upgradeable {
+contract HasSecondarySaleFees is ERC165 {
     struct Fee {
         address payable recipient;
         uint256 value;

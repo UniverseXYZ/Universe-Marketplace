@@ -64,10 +64,14 @@ describe("Match Orders Tests", () => {
     );
 
     const MockNFT = await ethers.getContractFactory("MockNFT");
+    const MockNFTSecondaryFees = await ethers.getContractFactory(
+      "MockNFTSecondaryFees"
+    );
     const MockToken = await ethers.getContractFactory("MockToken");
 
     const mockNFT = await MockNFT.deploy();
     const mockNFT2 = await MockNFT.deploy();
+    const mockNFT3 = await MockNFTSecondaryFees.deploy();
     const mockToken = await MockToken.deploy(1000);
 
     await erc20TransferProxy.addOperator(universeMarketplace.address);
@@ -81,6 +85,7 @@ describe("Match Orders Tests", () => {
       universeMarketplace,
       mockNFT,
       mockNFT2,
+      mockNFT3,
       mockToken,
       erc20TransferProxy,
       transferProxy,
@@ -319,13 +324,8 @@ describe("Match Orders Tests", () => {
   });
 
   it("should create successfully match ERC721 BUNDLE with ETH", async () => {
-    const {
-      universeMarketplace,
-      mockNFT,
-      mockNFT2,
-      transferProxy,
-      royaltiesRegistry,
-    } = await loadFixture(deployedContracts);
+    const { universeMarketplace, mockNFT, mockNFT2, transferProxy } =
+      await loadFixture(deployedContracts);
 
     const accounts = await ethers.getSigners();
 
@@ -492,6 +492,166 @@ describe("Match Orders Tests", () => {
     expect(mockNFTBalance).to.equal(1);
 
     const tokenOwner = await mockNFT.ownerOf(1);
+    expect(tokenOwner).to.equal(accounts[1].address);
+  });
+
+  it("should fail if ERC721 BUNDLE has more than 10 NFTs", async () => {
+    const { universeMarketplace, mockNFT, mockNFT2, transferProxy } =
+      await loadFixture(deployedContracts);
+
+    const accounts = await ethers.getSigners();
+
+    for (let i = 0; i < 6; i++) {
+      await mockNFT.connect(accounts[1]).mint("https://universe.xyz");
+      await mockNFT.connect(accounts[1]).approve(transferProxy.address, i + 1);
+      await mockNFT2.connect(accounts[1]).mint("https://universe.xyz");
+      await mockNFT2.connect(accounts[1]).approve(transferProxy.address, i + 1);
+    }
+
+    const erc721Qunatity = 12;
+
+    const encodedPaymentSplitsData = await universeMarketplace.encodeOrderData([
+      [
+        [accounts[2].address, 1000],
+        [accounts[3].address, 2000],
+        [accounts[4].address, 2000],
+      ],
+    ]);
+
+    const left = Order(
+      accounts[1].address,
+      Asset(
+        ERC721_BUNDLE,
+        encodeBundleInfo(
+          [mockNFT.address, mockNFT2.address],
+          [
+            [1, 2, 3, 4, 5, 6],
+            [1, 2, 3, 4, 5, 6],
+          ]
+        ),
+        erc721Qunatity
+      ),
+      ZERO_ADDRESS,
+      Asset(ETH, "0x", 200),
+      1,
+      0,
+      0,
+      "0x0b35c423",
+      encodedPaymentSplitsData
+    );
+
+    const right = Order(
+      accounts[0].address,
+      Asset(ETH, "0x", 200),
+      ZERO_ADDRESS,
+      Asset(
+        ERC721_BUNDLE,
+        encodeBundleInfo(
+          [mockNFT.address, mockNFT2.address],
+          [
+            [1, 2, 3, 4, 5, 6],
+            [1, 2, 3, 4, 5, 6],
+          ]
+        ),
+        erc721Qunatity
+      ),
+      1,
+      0,
+      0,
+      "0xffffffff",
+      "0x"
+    );
+
+    const signatureLeft = await sign(
+      left,
+      accounts[1],
+      universeMarketplace.address
+    );
+
+    await expect(
+      universeMarketplace
+        .connect(accounts[0])
+        .matchOrders(left, signatureLeft, right, "0x", {
+          value: 200,
+        })
+    ).revertedWith("erc721 value error");
+  });
+
+  it("should recognize HasSecondarySaleFees interface through the Royalties registry", async () => {
+    const { universeMarketplace, mockNFT3, transferProxy } = await loadFixture(
+      deployedContracts
+    );
+
+    const accounts = await ethers.getSigners();
+
+    await mockNFT3
+      .connect(accounts[0])
+      .mint("https://universe.xyz", [[accounts[10].address, 2000]]);
+    await mockNFT3.connect(accounts[0]).approve(transferProxy.address, 1);
+
+    const encodedPaymentSplitsData = await universeMarketplace.encodeOrderData([
+      [
+        [accounts[2].address, 1000],
+        [accounts[3].address, 2000],
+        [accounts[4].address, 2000],
+      ],
+    ]);
+
+    const erc721Qunatity = 1;
+
+    const left = Order(
+      accounts[1].address,
+      Asset(ETH, "0x", 200),
+      ZERO_ADDRESS,
+      Asset(ERC721, encodeToken(mockNFT3.address, 1), erc721Qunatity),
+      1,
+      0,
+      0,
+      "0xffffffff",
+      "0x"
+    );
+
+    const right = Order(
+      accounts[0].address,
+      Asset(ERC721, encodeToken(mockNFT3.address, 1), erc721Qunatity),
+      ZERO_ADDRESS,
+      Asset(ETH, "0x", 200),
+      1,
+      0,
+      0,
+      "0x0b35c423",
+      encodedPaymentSplitsData
+    );
+
+    const signatureLeft = await sign(
+      left,
+      accounts[1],
+      universeMarketplace.address
+    );
+
+    const signatureRight = await sign(
+      right,
+      accounts[0],
+      universeMarketplace.address
+    );
+
+    const balanceBefore = await ethers.provider.getBalance(accounts[0].address);
+
+    await expect(
+      universeMarketplace
+        .connect(accounts[1])
+        .matchOrders(left, "0x", right, signatureRight, {
+          value: 200,
+        })
+    ).to.be.emit(universeMarketplace, "Match");
+
+    const balanceAfter = await ethers.provider.getBalance(accounts[0].address);
+    expect(balanceAfter.sub(balanceBefore)).to.equal(10);
+
+    const mockNFTBalance = await mockNFT3.balanceOf(accounts[1].address);
+    expect(mockNFTBalance).to.equal(1);
+
+    const tokenOwner = await mockNFT3.ownerOf(1);
     expect(tokenOwner).to.equal(accounts[1].address);
   });
 });

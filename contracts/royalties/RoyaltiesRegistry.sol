@@ -131,12 +131,5 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
         }
     }
 
-    function getRoyaltiesByToken(address token) external view returns (LibPart.Part[] memory) {
-        RoyaltiesSet memory royaltiesSet = royaltiesByToken[token];
-        if (royaltiesSet.initialized) {
-            return royaltiesSet.royalties;
-        }
-    }
-
     uint256[46] private __gap;
 }
