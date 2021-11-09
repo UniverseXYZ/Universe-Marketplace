@@ -5,6 +5,7 @@ pragma abicoder v2;
 
 import "../interfaces/IRoyaltiesProvider.sol";
 import "./HasSecondarySaleFees.sol";
+import "./ERC2981Royalties.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
@@ -23,6 +24,7 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
     mapping(address => address) public royaltiesProviders;
 
     bytes4 private constant _INTERFACE_ID_FEES = 0xb7799584;
+    bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
 
     function __RoyaltiesRegistry_init() external initializer {
         __Ownable_init_unchained();
@@ -114,6 +116,27 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
                 result[i].value = uint96(values[i]);
                 result[i].account = recipients[i];
             }
+            return result;
+        }
+        if (IERC165Upgradeable(token).supportsInterface(_INTERFACE_ID_ERC2981)) {  
+            ERC2981Royalties erc2981Royalties = ERC2981Royalties(token);
+
+            address payable royaltyRecipient;
+            uint96 royaltyValue;
+
+            // As ERC2981Royalties returns the calculated royalty amount in wei, we call the royaltyInfo func with value 10000, so we get the actual percentage
+            try erc2981Royalties.royaltyInfo(tokenId, 10000) returns (address recipient, uint256 value) {
+                royaltyRecipient = payable(recipient);
+                royaltyValue = uint96(value);
+            } catch {
+                return new LibPart.Part[](0);
+            }
+
+            // ERC2981 Supports only one royalty recipient
+            LibPart.Part[] memory result = new LibPart.Part[](1);
+            result[0].value = royaltyValue;
+            result[0].account = royaltyRecipient;
+
             return result;
         }
         return new LibPart.Part[](0);
