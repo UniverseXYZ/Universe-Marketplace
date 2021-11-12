@@ -1,7 +1,7 @@
 {
-  "name": "universe-marketplace",
+  "name": "@universe/marketplace",
   "version": "1.0.0",
-  "description": "",
+  "description": "Universe.XYZ Marketplace Smart Contracts",
   "main": "index.js",
   "scripts": {
     "compile": "npx hardhat compile",
@@ -17,9 +17,6 @@
     "hardhat": "^2.6.4",
     "ethereumjs-util":"^6.1.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.6",
@@ -43,5 +40,21 @@
     "solhint": "^3.3.6",
     "solidity-coverage": "^0.7.17",
     "hardhat-deploy": "^0.9.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UniverseXYZ/Universe-Marketplace.git"
+  },
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "smart",
+    "contracts",
+    "marketplace",
+    "universe",
+    "xyz"
+  ],
+  "author": "Universe.XYZ",
+  "license": "MIT",
+  "homepage": "https://universe.xyz/marketplace"
 }
