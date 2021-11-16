@@ -28,4 +28,12 @@ contract TransferProxy is INftTransferProxy, Initializable, OperatorRole {
             } 
         }
     }
+
+    function erc721BatchTransfer(ERC721Item[] calldata erc721Items, address to) override external {
+        require(erc721Items.length <= 50, "Cannot transfer more than 50");
+        for (uint256 i = 0; i < erc721Items.length; i++) {
+            require(IERC721Upgradeable(erc721Items[i].tokenAddress).ownerOf(erc721Items[i].tokenId) == msg.sender, "Not owner");
+            IERC721Upgradeable(erc721Items[i].tokenAddress).safeTransferFrom(msg.sender, to, erc721Items[i].tokenId);
+        }
+    }
 }
