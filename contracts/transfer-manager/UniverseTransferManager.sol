@@ -15,6 +15,8 @@ import "../interfaces/INftTransferProxy.sol";
 import "../transfer-executor/TransferExecutor.sol";
 import "../lib/LibOrderData.sol";
 import "../lib/BpLibrary.sol";
+import "../lib/LibERC721LazyMint.sol";
+import "../lib/LibERC1155LazyMint.sol";
 
 abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManager {
     using BpLibrary for uint;
@@ -177,6 +179,14 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
         if (matchNft.assetClass == LibAsset.ERC1155_ASSET_CLASS || matchNft.assetClass == LibAsset.ERC721_ASSET_CLASS) {
             (address token, uint tokenId) = abi.decode(matchNft.data, (address, uint));
             LibPart.Part[] memory fees = royaltiesRegistry.getRoyalties(token, tokenId);
+            totalAmount = transferFees(matchCalculate, fees, amount, from, transferDirection);
+        } else if (matchNft.assetClass == LibERC1155LazyMint.ERC1155_LAZY_ASSET_CLASS) {
+            (address token, LibERC1155LazyMint.Mint1155Data memory data) = abi.decode(matchNft.data, (address, LibERC1155LazyMint.Mint1155Data));
+            LibPart.Part[] memory fees = data.royalties;
+            totalAmount = transferFees(matchCalculate, fees, amount, from, transferDirection);
+        } else if (matchNft.assetClass == LibERC721LazyMint.ERC721_LAZY_ASSET_CLASS) {
+            (address token, LibERC721LazyMint.Mint721Data memory data) = abi.decode(matchNft.data, (address, LibERC721LazyMint.Mint721Data));
+            LibPart.Part[] memory fees = data.royalties;
             totalAmount = transferFees(matchCalculate, fees, amount, from, transferDirection);
         } else if (matchNft.assetClass == LibAsset.ERC721_BUNDLE_ASSET_CLASS) {
             (INftTransferProxy.ERC721BundleItem[] memory erc721BundleItems) = abi.decode(matchNft.data, (INftTransferProxy.ERC721BundleItem[]));
