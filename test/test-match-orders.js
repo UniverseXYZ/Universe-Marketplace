@@ -7,6 +7,7 @@ const DAO_FEE = 2500;
 const DAO_ADDRESS = "0x67b93852482113375666a310ac292D61dDD4bbb9";
 const { Order, Asset, sign } = require("../helpers/order");
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const MAX_BUNDLE_SIZE = 10;
 const {
   ETH,
   ERC20,
@@ -59,6 +60,7 @@ describe("Match Orders Tests", () => {
         DAO_FEE,
         DAO_ADDRESS,
         royaltiesRegistry.address,
+        MAX_BUNDLE_SIZE,
       ],
       { initializer: "__UniverseMarketplace_init" }
     );

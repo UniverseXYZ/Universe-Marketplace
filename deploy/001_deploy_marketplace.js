@@ -62,6 +62,7 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
           process.env.DAO_FEE,
           process.env.DAO_ADDRESS,
           royaltiesRegistry.address,
+          process.env.MAX_BUNDLE_SIZE,
         ],
       },
     },
