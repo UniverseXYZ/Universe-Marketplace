@@ -16,6 +16,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
 
     uint256 public ordersCount;
     uint256 public daoFeeBps;
+    uint256 public maxTokensInOrder;
     address public daoAddress;
 
     address public erc20TransferProxy;
@@ -99,13 +100,15 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         uint256 _daoFeeBps,
         address _erc20TransferProxy,
         address _nftTransferProxy,
-        address _royaltiesRegistry
+        address _royaltiesRegistry,
+        uint256 _maxTokensInOrder
     ) external initializer {
         daoAddress = _daoAddress;
         daoFeeBps = _daoFeeBps;
         erc20TransferProxy = _erc20TransferProxy;
         nftTransferProxy = _nftTransferProxy;
         royaltiesRegistry = _royaltiesRegistry;
+        maxTokensInOrder = _maxTokensInOrder;
     }
 
     function createBuyOrder(
@@ -117,7 +120,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
     ) external nonReentrant {
         require(block.timestamp < endTime, "End time should be in the future");
         require(
-            numberOfTokens > 0 && numberOfTokens <= 20,
+            numberOfTokens > 0 && numberOfTokens <= maxTokensInOrder,
             "Wrong number of tokens"
         );
         require(amount > 0, "Wrong amount");
@@ -274,6 +277,10 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
 
     function setDaoFeeBps(uint256 _daoFeeBps) external onlyDAO {
         daoFeeBps = _daoFeeBps;
+    }
+
+    function setMaxTokensInOrder(uint256 _maxTokensInOrder) external onlyDAO {
+        maxTokensInOrder = _maxTokensInOrder;
     }
 
     function setERC20TransferProxy(address _erc20TransferProxy) external onlyDAO {

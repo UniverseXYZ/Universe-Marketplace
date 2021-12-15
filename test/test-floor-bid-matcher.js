@@ -5,6 +5,7 @@ const { loadFixture } = waffle;
 
 const DAO_FEE = 2500;
 const DAO_ADDRESS = "0x67b93852482113375666a310ac292D61dDD4bbb9";
+const MAX_TOKENS_IN_ORDER = 20;
 
 describe("ERC721 Floor Bid Matcher Tests", () => {
   const deployedContracts = async () => {
@@ -47,6 +48,7 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
         erc20TransferProxy.address,
         transferProxy.address,
         royaltiesRegistry.address,
+        MAX_TOKENS_IN_ORDER,
       ],
       { initializer: "__ERC721FloorBidMatcher_init" }
     );
