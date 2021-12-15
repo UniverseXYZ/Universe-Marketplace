@@ -6,12 +6,13 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "./interfaces/INftTransferProxy.sol";
 import "./interfaces/IERC20TransferProxy.sol";
 import "./interfaces/IRoyaltiesProvider.sol";
 import "./lib/LibPart.sol";
 
-contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
+contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable {
     using SafeMathUpgradeable for uint256;
 
     uint256 public ordersCount;
@@ -55,7 +56,6 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         address paymentTokenAddress,
         uint256 amount,
         uint256 endTime,
-        uint256 time,
         address creator,
         uint256 orderId
     );
@@ -65,7 +65,6 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         uint256 tokenId,
         address paymentTokenAddress,
         uint256 amount,
-        uint256 time,
         address taker,
         uint256 orderId
     );
@@ -75,7 +74,6 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         address paymentTokenAddress,
         uint256 amount,
         uint256 endTime,
-        uint256 time,
         address creator,
         uint256 orderId
     );
@@ -85,13 +83,12 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         address paymentTokenAddress,
         uint256 amount,
         uint256 endTime,
-        uint256 time,
         address creator,
         uint256 orderId
     );
 
     modifier onlyDAO() {
-        require(msg.sender == daoAddress, "Not called from the dao");
+        require(_msgSender() == daoAddress, "Not called from the dao");
         _;
     }
 
@@ -129,7 +126,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
 
         IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
             IERC20Upgradeable(paymentTokenAddress),
-            msg.sender,
+            _msgSender(),
             address(this),
             amount
         );
@@ -143,7 +140,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         orders[orderId].numberOfTokens = numberOfTokens;
         orders[orderId].tokenPrice = amount.div(numberOfTokens);
         orders[orderId].endTime = endTime;
-        orders[orderId].creator = msg.sender;
+        orders[orderId].creator = _msgSender();
         orders[orderId].orderStatus = OrderStatus.OPENED;
 
         emit LogCreateBuyOrder(
@@ -151,8 +148,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
             paymentTokenAddress,
             amount,
             endTime,
-            block.timestamp,
-            msg.sender,
+            _msgSender(),
             orderId
         );
     }
@@ -179,7 +175,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
 
             INftTransferProxy(nftTransferProxy).erc721safeTransferFrom(
                 IERC721Upgradeable(order.erc721TokenAddress),
-                msg.sender,
+                _msgSender(),
                 order.creator,
                 tokenIds[i]
             );
@@ -192,8 +188,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
                 tokenIds[i],
                 order.paymentTokenAddress,
                 order.tokenPrice,
-                block.timestamp,
-                msg.sender,
+                _msgSender(),
                 orderId
             );
         }
@@ -208,7 +203,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
             IERC20Upgradeable(order.paymentTokenAddress),
             address(this),
-            msg.sender,
+            _msgSender(),
             amountToPay.sub(daoFee).sub(totalSecondaryFees)
         );
 
@@ -224,12 +219,12 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         ERC721FloorBidOrder storage order = orders[orderId];
 
         require(order.endTime > block.timestamp, "Order expired");
-        require(order.creator == msg.sender, "Only creator can cancel");
+        require(order.creator == _msgSender(), "Only creator can cancel");
 
         IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
             IERC20Upgradeable(order.paymentTokenAddress),
             address(this),
-            msg.sender,
+            _msgSender(),
             order.amount
         );
 
@@ -240,8 +235,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
             order.paymentTokenAddress,
             order.amount,
             order.endTime,
-            block.timestamp,
-            msg.sender,
+            _msgSender(),
             orderId
         );
     }
@@ -253,12 +247,12 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
         ERC721FloorBidOrder storage order = orders[orderId];
 
         require(order.endTime < block.timestamp, "Order not expired");
-        require(order.creator == msg.sender, "Only creator can cancel");
+        require(order.creator == _msgSender(), "Only creator can cancel");
 
         IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
             IERC20Upgradeable(order.paymentTokenAddress),
             address(this),
-            msg.sender,
+            _msgSender(),
             order.amount
         );
 
@@ -269,8 +263,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable {
             order.paymentTokenAddress,
             order.amount,
             order.endTime,
-            block.timestamp,
-            msg.sender,
+            _msgSender(),
             orderId
         );
     }
