@@ -86,6 +86,7 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
           nftTransferProxy.address,
           royaltiesRegistry.address,
           process.env.MAX_TOKENS_IN_ORDER,
+          process.env.SUPPORTED_ERC20_TOKENS.split(","),
         ],
       },
     },

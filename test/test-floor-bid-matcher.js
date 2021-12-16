@@ -36,6 +36,12 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
       }
     );
 
+    const MockNFT = await ethers.getContractFactory("MockNFT");
+    const MockToken = await ethers.getContractFactory("MockToken");
+
+    const mockNFT = await MockNFT.deploy();
+    const mockToken = await MockToken.deploy(1000);
+
     const ERC721FloorBidMatcher = await ethers.getContractFactory(
       "ERC721FloorBidMatcher"
     );
@@ -49,15 +55,10 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
         transferProxy.address,
         royaltiesRegistry.address,
         MAX_TOKENS_IN_ORDER,
+        [mockToken.address],
       ],
       { initializer: "__ERC721FloorBidMatcher_init" }
     );
-
-    const MockNFT = await ethers.getContractFactory("MockNFT");
-    const MockToken = await ethers.getContractFactory("MockToken");
-
-    const mockNFT = await MockNFT.deploy();
-    const mockToken = await MockToken.deploy(1000);
 
     await erc20TransferProxy.addOperator(erc721FloorBidMatcher.address);
     await transferProxy.addOperator(erc721FloorBidMatcher.address);

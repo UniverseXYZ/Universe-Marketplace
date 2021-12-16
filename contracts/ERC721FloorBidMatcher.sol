@@ -28,6 +28,7 @@ contract ERC721FloorBidMatcher is
     address public royaltiesRegistry;
 
     mapping(uint256 => ERC721FloorBidOrder) public orders;
+    mapping(address => bool) public supportedERC20Tokens;
 
     enum OrderStatus {
         OPENED,
@@ -101,7 +102,8 @@ contract ERC721FloorBidMatcher is
         address _erc20TransferProxy,
         address _nftTransferProxy,
         address _royaltiesRegistry,
-        uint256 _maxTokensInOrder
+        uint256 _maxTokensInOrder,
+        address[] memory _supportedERC20Tokens
     ) external initializer {
         daoAddress = _daoAddress;
         daoFeeBps = _daoFeeBps;
@@ -109,6 +111,15 @@ contract ERC721FloorBidMatcher is
         nftTransferProxy = _nftTransferProxy;
         royaltiesRegistry = _royaltiesRegistry;
         maxTokensInOrder = _maxTokensInOrder;
+        _initSupportedERC20Tokens(_supportedERC20Tokens);
+    }
+
+    function _initSupportedERC20Tokens(address[] memory _supportedERC20Tokens)
+        internal
+    {
+        for (uint256 i = 0; i < _supportedERC20Tokens.length; i += 1) {
+            supportedERC20Tokens[_supportedERC20Tokens[i]] = true;
+        }
     }
 
     function createBuyOrder(
@@ -124,6 +135,7 @@ contract ERC721FloorBidMatcher is
             "Wrong number of tokens"
         );
         require(amount > 0, "Wrong amount");
+        require(supportedERC20Tokens[paymentTokenAddress], "ERC20 token not supported");
 
         IERC20Upgradeable(paymentTokenAddress).approve(
             erc20TransferProxy,
@@ -242,7 +254,7 @@ contract ERC721FloorBidMatcher is
             (bool buyerTransferSuccess, ) = payable(_msgSender()).call{
                 value: amountToPay.sub(daoFee).sub(totalSecondaryFees)
             }("");
-            require(daoTransferSuccess, "Failed");
+            require(buyerTransferSuccess, "Failed");
         } else {
             IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
                 IERC20Upgradeable(order.paymentTokenAddress),
