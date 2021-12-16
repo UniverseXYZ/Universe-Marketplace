@@ -62,7 +62,7 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
 
     event LogMatchBuyOrder(
         address erc721TokenAddress,
-        uint256 tokenId,
+        uint256[] tokenIds,
         address paymentTokenAddress,
         uint256 amount,
         address taker,
@@ -160,6 +160,12 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
         ERC721FloorBidOrder storage order = orders[orderId];
 
         require(order.endTime > block.timestamp, "Order expired");
+        require(order.numberOfTokens > 0, "No tokens remaining to buy");
+        require(
+            order.orderStatus == OrderStatus.OPENED ||
+                order.orderStatus == OrderStatus.PARTIALLY_EXECUTED,
+            "Order expired"
+        );
 
         uint256 amountToPay = tokenIds.length.mul(order.tokenPrice);
         uint256 daoFee = daoFeeBps.mul(amountToPay).div(10000);
@@ -182,15 +188,6 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
 
             order.erc721TokenIdsSold.push(tokenIds[i]);
             totalSecondaryFees = totalSecondaryFees.add(secondarySaleFees);
-
-            emit LogMatchBuyOrder(
-                order.erc721TokenAddress,
-                tokenIds[i],
-                order.paymentTokenAddress,
-                order.tokenPrice,
-                _msgSender(),
-                orderId
-            );
         }
 
         IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
@@ -209,10 +206,18 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
 
         order.numberOfTokens = order.numberOfTokens.sub(tokenIds.length);
         order.amount = order.amount.sub(amountToPay);
-        order.orderStatus = OrderStatus.EXECUTED;
         (order.numberOfTokens == 0)
             ? order.orderStatus = OrderStatus.EXECUTED
             : order.orderStatus = OrderStatus.PARTIALLY_EXECUTED;
+        
+        emit LogMatchBuyOrder(
+            order.erc721TokenAddress,
+            tokenIds,
+            order.paymentTokenAddress,
+            amountToPay,
+            _msgSender(),
+            orderId
+        );
     }
 
     function cancelOrder(uint256 orderId) external nonReentrant {
