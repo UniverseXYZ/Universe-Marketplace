@@ -12,7 +12,10 @@ import "./interfaces/IERC20TransferProxy.sol";
 import "./interfaces/IRoyaltiesProvider.sol";
 import "./lib/LibPart.sol";
 
-contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable {
+contract ERC721FloorBidMatcher is
+    ReentrancyGuardUpgradeable,
+    ContextUpgradeable
+{
     using SafeMathUpgradeable for uint256;
 
     uint256 public ordersCount;
@@ -122,7 +125,10 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
         );
         require(amount > 0, "Wrong amount");
 
-        IERC20Upgradeable(paymentTokenAddress).approve(erc20TransferProxy, amount);
+        IERC20Upgradeable(paymentTokenAddress).approve(
+            erc20TransferProxy,
+            amount
+        );
 
         IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
             IERC20Upgradeable(paymentTokenAddress),
@@ -130,6 +136,43 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
             address(this),
             amount
         );
+
+        ordersCount = ordersCount.add(1);
+        uint256 orderId = ordersCount;
+
+        orders[orderId].erc721TokenAddress = erc721TokenAddress;
+        orders[orderId].paymentTokenAddress = paymentTokenAddress;
+        orders[orderId].amount = amount;
+        orders[orderId].numberOfTokens = numberOfTokens;
+        orders[orderId].tokenPrice = amount.div(numberOfTokens);
+        orders[orderId].endTime = endTime;
+        orders[orderId].creator = _msgSender();
+        orders[orderId].orderStatus = OrderStatus.OPENED;
+
+        emit LogCreateBuyOrder(
+            erc721TokenAddress,
+            paymentTokenAddress,
+            amount,
+            endTime,
+            _msgSender(),
+            orderId
+        );
+    }
+
+    function createBuyOrderETH(
+        address erc721TokenAddress,
+        uint256 numberOfTokens,
+        uint256 endTime
+    ) external payable nonReentrant {
+        uint256 amount = msg.value;
+        address paymentTokenAddress = address(0);
+
+        require(block.timestamp < endTime, "End time should be in the future");
+        require(
+            numberOfTokens > 0 && numberOfTokens <= maxTokensInOrder,
+            "Wrong number of tokens"
+        );
+        require(amount > 0, "Wrong amount");
 
         ordersCount = ordersCount.add(1);
         uint256 orderId = ordersCount;
@@ -190,26 +233,37 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
             totalSecondaryFees = totalSecondaryFees.add(secondarySaleFees);
         }
 
-        IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
-            IERC20Upgradeable(order.paymentTokenAddress),
-            address(this),
-            daoAddress,
-            daoFee
-        );
+        if (order.paymentTokenAddress == address(0)) {
+            (bool daoTransferSuccess, ) = payable(daoAddress).call{
+                value: daoFee
+            }("");
+            require(daoTransferSuccess, "Failed");
 
-        IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
-            IERC20Upgradeable(order.paymentTokenAddress),
-            address(this),
-            _msgSender(),
-            amountToPay.sub(daoFee).sub(totalSecondaryFees)
-        );
+            (bool buyerTransferSuccess, ) = payable(_msgSender()).call{
+                value: amountToPay.sub(daoFee).sub(totalSecondaryFees)
+            }("");
+            require(daoTransferSuccess, "Failed");
+        } else {
+            IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
+                IERC20Upgradeable(order.paymentTokenAddress),
+                address(this),
+                daoAddress,
+                daoFee
+            );
+            IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
+                IERC20Upgradeable(order.paymentTokenAddress),
+                address(this),
+                _msgSender(),
+                amountToPay.sub(daoFee).sub(totalSecondaryFees)
+            );
+        }
 
         order.numberOfTokens = order.numberOfTokens.sub(tokenIds.length);
         order.amount = order.amount.sub(amountToPay);
         (order.numberOfTokens == 0)
             ? order.orderStatus = OrderStatus.EXECUTED
             : order.orderStatus = OrderStatus.PARTIALLY_EXECUTED;
-        
+
         emit LogMatchBuyOrder(
             order.erc721TokenAddress,
             tokenIds,
@@ -232,12 +286,19 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
             "Order expired"
         );
 
-        IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
-            IERC20Upgradeable(order.paymentTokenAddress),
-            address(this),
-            _msgSender(),
-            order.amount
-        );
+        if (order.paymentTokenAddress == address(0)) {
+            (bool success, ) = payable(_msgSender()).call{value: order.amount}(
+                ""
+            );
+            require(success, "Failed");
+        } else {
+            IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
+                IERC20Upgradeable(order.paymentTokenAddress),
+                address(this),
+                _msgSender(),
+                order.amount
+            );
+        }
 
         order.orderStatus = OrderStatus.CANCELLED;
 
@@ -266,12 +327,19 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
             "Order expired"
         );
 
-        IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
-            IERC20Upgradeable(order.paymentTokenAddress),
-            address(this),
-            _msgSender(),
-            order.amount
-        );
+        if (order.paymentTokenAddress == address(0)) {
+            (bool success, ) = payable(_msgSender()).call{value: order.amount}(
+                ""
+            );
+            require(success, "Failed");
+        } else {
+            IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
+                IERC20Upgradeable(order.paymentTokenAddress),
+                address(this),
+                _msgSender(),
+                order.amount
+            );
+        }
 
         order.orderStatus = OrderStatus.EXPIRED;
 
@@ -293,7 +361,10 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
         maxTokensInOrder = _maxTokensInOrder;
     }
 
-    function setERC20TransferProxy(address _erc20TransferProxy) external onlyDAO {
+    function setERC20TransferProxy(address _erc20TransferProxy)
+        external
+        onlyDAO
+    {
         erc20TransferProxy = _erc20TransferProxy;
     }
 
@@ -320,7 +391,8 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
         uint256 tokenId,
         uint256 amount
     ) internal returns (uint256) {
-        LibPart.Part[] memory fees = IRoyaltiesProvider(royaltiesRegistry).getRoyalties(erc721TokenAddress, tokenId);
+        LibPart.Part[] memory fees = IRoyaltiesProvider(royaltiesRegistry)
+            .getRoyalties(erc721TokenAddress, tokenId);
 
         uint256 totalFees = 0;
         if (fees.length > 0) {
@@ -334,13 +406,20 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
                 value = interimFee.remainingValue;
 
                 if (interimFee.feeValue > 0) {
-                    IERC20TransferProxy(erc20TransferProxy)
-                        .erc20safeTransferFrom(
-                            IERC20Upgradeable(paymentTokenAddress),
-                            address(this),
-                            address(fees[i].account),
-                            interimFee.feeValue
-                        );
+                    if (paymentTokenAddress == address(0)) {
+                        (bool success, ) = payable(fees[i].account).call{
+                            value: interimFee.feeValue
+                        }("");
+                        require(success, "Failed");
+                    } else {
+                        IERC20TransferProxy(erc20TransferProxy)
+                            .erc20safeTransferFrom(
+                                IERC20Upgradeable(paymentTokenAddress),
+                                address(this),
+                                address(fees[i].account),
+                                interimFee.feeValue
+                            );
+                    }
                     totalFees = totalFees.add(interimFee.feeValue);
                 }
             }
