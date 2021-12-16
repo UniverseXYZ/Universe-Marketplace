@@ -225,6 +225,12 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
 
         require(order.endTime > block.timestamp, "Order expired");
         require(order.creator == _msgSender(), "Only creator can cancel");
+        require(order.numberOfTokens > 0, "No tokens remaining to buy");
+        require(
+            order.orderStatus == OrderStatus.OPENED ||
+                order.orderStatus == OrderStatus.PARTIALLY_EXECUTED,
+            "Order expired"
+        );
 
         IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
             IERC20Upgradeable(order.paymentTokenAddress),
@@ -253,6 +259,12 @@ contract ERC721FloorBidMatcher is ReentrancyGuardUpgradeable, ContextUpgradeable
 
         require(order.endTime < block.timestamp, "Order not expired");
         require(order.creator == _msgSender(), "Only creator can cancel");
+        require(order.numberOfTokens > 0, "No tokens remaining to buy");
+        require(
+            order.orderStatus == OrderStatus.OPENED ||
+                order.orderStatus == OrderStatus.PARTIALLY_EXECUTED,
+            "Order expired"
+        );
 
         IERC20TransferProxy(erc20TransferProxy).erc20safeTransferFrom(
             IERC20Upgradeable(order.paymentTokenAddress),
