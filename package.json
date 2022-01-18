@@ -13,9 +13,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "3.4.0",
-    "@openzeppelin/contracts": "^3.4.1",
-    "hardhat": "^2.6.4",
-    "ethereumjs-util":"^6.1.0"
+    "@openzeppelin/contracts": "^3.4.1"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
@@ -23,6 +21,8 @@
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/hardhat-upgrades": "^1.10.0",
+    "hardhat": "^2.6.4",
+    "ethereumjs-util":"^6.1.0",
     "chai": "^4.3.4",
     "dotenv": "^10.0.0",
     "eslint": "^7.32.0",
@@ -43,7 +43,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/UniverseXYZ/Universe-Marketplace.git"
+    "url": "git+https://github.com/UniverseXYZ/Universe-Marketplace.git"
   },
   "keywords": [
     "solidity",
@@ -54,7 +54,7 @@
     "universe",
     "xyz"
   ],
-  "author": "Universe.XYZ",
+  "author": "Stanislav Trenev <stanislav.trenev@limechain.tech> Universe.XYZ",
   "license": "MIT",
   "homepage": "https://universe.xyz/marketplace"
 }
