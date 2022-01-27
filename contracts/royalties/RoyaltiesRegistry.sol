@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity >=0.6.2 <0.8.0;
-pragma experimental ABIEncoderV2;
+pragma solidity 0.8.11;
 
 import "../interfaces/IRoyaltiesProvider.sol";
 import "./HasSecondarySaleFees.sol";
@@ -97,14 +95,14 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
         if (IERC165Upgradeable(token).supportsInterface(_INTERFACE_ID_FEES)) {
             HasSecondarySaleFees hasFees = HasSecondarySaleFees(token);
             address payable[] memory recipients;
-            try hasFees.getFeeRecipients(tokenId) returns (address payable[] memory result) {
-                recipients = result;
+            try hasFees.getFeeRecipients(tokenId) returns (address payable[] memory recipientsResult) {
+                recipients = recipientsResult;
             } catch {
                 return new LibPart.Part[](0);
             }
             uint[] memory values;
-            try hasFees.getFeeBps(tokenId) returns (uint[] memory result) {
-                values = result;
+            try hasFees.getFeeBps(tokenId) returns (uint[] memory feesResult) {
+                values = feesResult;
             } catch {
                 return new LibPart.Part[](0);
             }
@@ -154,5 +152,4 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
         }
     }
 
-    uint256[46] private __gap;
 }

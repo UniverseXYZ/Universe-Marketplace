@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity 0.8.11;
 
 import "../lib/LibAsset.sol";
 import "../lib/LibTransfer.sol";
@@ -9,7 +7,7 @@ import "../interfaces/ITransferProxy.sol";
 import "../interfaces/INftTransferProxy.sol";
 import "../interfaces/IERC20TransferProxy.sol";
 import "../interfaces/ITransferExecutor.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 abstract contract TransferExecutor is Initializable, OwnableUpgradeable, ITransferExecutor {
@@ -68,5 +66,4 @@ abstract contract TransferExecutor is Initializable, OwnableUpgradeable, ITransf
         emit Transfer(asset, from, to, transferDirection, transferType);
     }
 
-    uint256[49] private __gap;
 }

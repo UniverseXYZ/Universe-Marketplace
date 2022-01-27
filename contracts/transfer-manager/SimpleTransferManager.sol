@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity 0.7.6;
+pragma solidity 0.8.11;
 
 import "../interfaces/ITransferManager.sol";
 
@@ -22,5 +21,5 @@ abstract contract SimpleTransferManager is ITransferManager {
         totalMakeValue = fill.makeValue;
         totalTakeValue = fill.takeValue;
     }
-    uint256[50] private __gap;
+
 }

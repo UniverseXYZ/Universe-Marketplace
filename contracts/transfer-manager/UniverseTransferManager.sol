@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity 0.7.6;
-
-pragma abicoder v2;
+pragma solidity 0.8.11;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "../lib/LibAsset.sol";
 import "../interfaces/IRoyaltiesProvider.sol";
 import "../lib/LibFill.sol";
@@ -52,8 +49,8 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
         royaltiesRegistry = _royaltiesRegistry;
     }
 
-    function setDaoFee(uint daoFee) external onlyOwner {
-        daoFee = daoFee;
+    function setDaoFee(uint _daoFee) external onlyOwner {
+        daoFee = _daoFee;
     }
 
     function setDefaultFeeReceiver(address payable newDefaultFeeReceiver) external onlyOwner {
@@ -218,5 +215,4 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
         }
     }
 
-    uint256[50] private __gap;
 }

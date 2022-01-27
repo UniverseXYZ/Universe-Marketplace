@@ -1,11 +1,11 @@
-pragma solidity ^0.7.6;
-pragma experimental ABIEncoderV2;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.11;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "../royalties/ERC2981Royalties.sol";
 
-contract MockNFTERC2981Royalties is ERC721, ERC2981Royalties {
+contract MockNFTERC2981Royalties is ERC721URIStorage, ERC2981Royalties {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
@@ -23,6 +23,10 @@ contract MockNFTERC2981Royalties is ERC721, ERC2981Royalties {
         _setTokenRoyalty(newItemId, royaltyRecipient, royaltyFeeBps);
 
         return newItemId;
+    }
+    
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165Storage, ERC721) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 
 }

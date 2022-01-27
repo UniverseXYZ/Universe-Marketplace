@@ -1,14 +1,11 @@
-
-   
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
+pragma solidity 0.8.11;
 
-import "@openzeppelin/contracts/introspection/ERC165.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165Storage.sol";
 import "../interfaces/IERC2981Royalties.sol";
 
 /// @dev This is a contract used to add ERC2981 support to ERC721 and 1155
-abstract contract ERC2981Royalties is ERC165, IERC2981Royalties {
+abstract contract ERC2981Royalties is ERC165Storage, IERC2981Royalties {
     struct RoyaltyInfo {
         address recipient;
         uint24 amount;

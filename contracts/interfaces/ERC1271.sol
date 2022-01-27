@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity 0.7.6;
+pragma solidity 0.8.11;
 
 interface ERC1271 {
 
@@ -13,5 +12,5 @@ interface ERC1271 {
      * MUST NOT modify state (using STATICCALL for solc < 0.5, view modifier for solc > 0.5)
      * MUST allow external calls
      */
-    function isValidSignature(bytes32 _hash, bytes calldata _signature) virtual external view returns (bytes4 magicValue);
+    function isValidSignature(bytes32 _hash, bytes calldata _signature) external view returns (bytes4 magicValue);
 }

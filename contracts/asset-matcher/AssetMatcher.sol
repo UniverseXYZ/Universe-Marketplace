@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity 0.8.11;
 
 import "../interfaces/IAssetMatcher.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 abstract contract AssetMatcher is Initializable, OwnableUpgradeable {
@@ -71,7 +69,7 @@ abstract contract AssetMatcher is Initializable, OwnableUpgradeable {
         revert("not found IAssetMatcher");
     }
 
-    function simpleMatch(LibAsset.AssetType memory leftAssetType, LibAsset.AssetType memory rightAssetType) private view returns (LibAsset.AssetType memory) {
+    function simpleMatch(LibAsset.AssetType memory leftAssetType, LibAsset.AssetType memory rightAssetType) private pure returns (LibAsset.AssetType memory) {
         bytes32 leftHash = keccak256(leftAssetType.data);
         bytes32 rightHash = keccak256(rightAssetType.data);
         if (leftHash == rightHash) {
@@ -80,5 +78,4 @@ abstract contract AssetMatcher is Initializable, OwnableUpgradeable {
         return LibAsset.AssetType(0, EMPTY);
     }
 
-    uint256[49] private __gap;
 }

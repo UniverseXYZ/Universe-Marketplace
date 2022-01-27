@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.0;
-pragma experimental ABIEncoderV2;
+pragma solidity 0.8.11;
+import "@openzeppelin/contracts/utils/introspection/ERC165Storage.sol";
 
-import "@openzeppelin/contracts/introspection/ERC165.sol";
-
-abstract contract HasSecondarySaleFees is ERC165 {
+abstract contract HasSecondarySaleFees is ERC165Storage {
     struct Fee {
         address payable recipient;
         uint256 value;

@@ -1,11 +1,11 @@
-pragma solidity ^0.7.6;
-pragma experimental ABIEncoderV2;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.11;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "../royalties/HasSecondarySaleFees.sol";
 
-contract MockNFTSecondaryFees is ERC721, HasSecondarySaleFees {
+contract MockNFTSecondaryFees is ERC721URIStorage, HasSecondarySaleFees {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
@@ -25,7 +25,7 @@ contract MockNFTSecondaryFees is ERC721, HasSecondarySaleFees {
         return newItemId;
     }
 
-    function _registerFees(uint256 _tokenId, Fee[] memory _fees) internal returns (bool) {
+    function _registerFees(uint256 _tokenId, Fee[] memory _fees) internal {
         require(_fees.length <= 5, "No more than 5 recipients");
         address[] memory recipients = new address[](_fees.length);
         uint256[] memory bps = new uint256[](_fees.length);
@@ -42,5 +42,9 @@ contract MockNFTSecondaryFees is ERC721, HasSecondarySaleFees {
         if (_fees.length > 0) {
             emit SecondarySaleFees(_tokenId, recipients, bps);
         }
+    }
+    
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165Storage, ERC721) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 }
