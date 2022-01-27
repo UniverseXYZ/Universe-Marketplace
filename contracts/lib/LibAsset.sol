@@ -7,6 +7,7 @@ library LibAsset {
     bytes4 constant public ERC721_ASSET_CLASS = bytes4(keccak256("ERC721"));
     bytes4 constant public ERC1155_ASSET_CLASS = bytes4(keccak256("ERC1155"));
     bytes4 constant public ERC721_BUNDLE_ASSET_CLASS = bytes4(keccak256("ERC721_BUNDLE")); 
+    bytes4 constant public ERC721_LAZY_ASSET_CLASS = bytes4(keccak256("ERC721_LAZY"));
 
     bytes32 constant ASSET_TYPE_TYPEHASH = keccak256(
         "AssetType(bytes4 assetClass,bytes data)"
