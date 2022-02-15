@@ -1,0 +1,31 @@
+on: [push]
+jobs:
+  main_job:
+    runs-on: ubuntu-latest
+    name: Solidity Security 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Install dependencies
+        run: yarn
+      - name: Configure Hardhat
+        env:
+          HARDHAT_CONFIG : ${{secrets.HARDHAT_CONFIG}}
+        run: echo "$HARDHAT_CONFIG" > hardhat.config.js
+      - name: Compile Contracts
+        run: yarn compile
+      - name: Slither Static Analysis
+        uses: luisfontes19/slither-static-analysis-action@v0.3.4
+        with:
+          slither-version: '0.8.2'
+          run-npm-install: true
+          high-threshold: 1
+          medium-threshold: 1
+          low-threshold: 1
+          optimization-threshold: 1
+          informative-threshold: 10
+          projectPath: "."
