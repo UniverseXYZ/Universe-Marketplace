@@ -175,8 +175,9 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
         uint256 totalAmount = 0;
         if (matchNft.assetClass == LibAsset.ERC1155_ASSET_CLASS || matchNft.assetClass == LibAsset.ERC721_ASSET_CLASS) {
             (address token, uint tokenId) = abi.decode(matchNft.data, (address, uint));
-            LibPart.Part[] memory fees = royaltiesRegistry.getRoyalties(token, tokenId);
+            (LibPart.Part[] memory fees, LibPart.Part[] memory collectionRoyalties) = royaltiesRegistry.getRoyalties(token, tokenId);
             totalAmount = transferFees(matchCalculate, fees, amount, from, transferDirection);
+            totalAmount = totalAmount + transferFees(matchCalculate, collectionRoyalties, amount, from, transferDirection);
         } else if (matchNft.assetClass == LibERC1155LazyMint.ERC1155_LAZY_ASSET_CLASS) {
             (address token, LibERC1155LazyMint.Mint1155Data memory data) = abi.decode(matchNft.data, (address, LibERC1155LazyMint.Mint1155Data));
             LibPart.Part[] memory fees = data.royalties;
@@ -189,8 +190,9 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
             (INftTransferProxy.ERC721BundleItem[] memory erc721BundleItems) = abi.decode(matchNft.data, (INftTransferProxy.ERC721BundleItem[]));
             for (uint256 i = 0; i < erc721BundleItems.length; i++) {
                 for (uint256 j = 0; j < erc721BundleItems[i].tokenIds.length; j++){
-                    LibPart.Part[] memory fees = royaltiesRegistry.getRoyalties(erc721BundleItems[i].tokenAddress, erc721BundleItems[i].tokenIds[j]);
+                    (LibPart.Part[] memory fees, LibPart.Part[] memory collectionRoyalties) = royaltiesRegistry.getRoyalties(erc721BundleItems[i].tokenAddress, erc721BundleItems[i].tokenIds[j]);
                     totalAmount = totalAmount.add(transferFees(matchCalculate, fees, amount.div(matchNftValue), from, transferDirection));
+                    totalAmount = totalAmount.add(transferFees(matchCalculate, collectionRoyalties, amount.div(matchNftValue), from, transferDirection));
                 } 
             }
         }

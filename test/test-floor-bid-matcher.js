@@ -393,7 +393,7 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
     expect(nftBalanceSeller).to.equal(12);
   });
 
-  it("should successfully Deduct Royalties from the Seller Revenue", async () => {
+  it("should successfully Deduct Collection Level Royalties from the Seller Revenue", async () => {
     const { erc721FloorBidMatcher, mockNFT, mockToken, royaltiesRegistry } = await loadFixture(
       deployedContracts
     );
@@ -408,6 +408,7 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
       .connect(accounts[0])
       .approve(erc20TransferProxy, ethers.constants.MaxUint256);
 
+    // Price Per Token = amount / tokens.length = 500 / 10 = 50;
     await expect(
       erc721FloorBidMatcher
         .connect(accounts[0])
@@ -419,13 +420,10 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
     const balance = await mockToken.balanceOf(erc721FloorBidMatcher.address);
     expect(balance).to.equal(500);
 
-    // Assign Collection Royalties to the collection
+    // Assign 10% Collection Royalties which is equal to (50 * 1000 BPS) / 10000 = 5 Eth
     await royaltiesRegistry.setRoyaltiesByToken(mockNFT.address, [
       [accounts[5].address, 1000],
     ]);
-
-    // Token price is Sum Amount / number of tokens = 500 / 10 = 50;
-    // The collection royalty address should receive 10% from the sale which is equal to (50 * 1000 BPS) / 10000 = 5
 
     for (let i = 0; i < 20; i++) {
       await mockNFT.connect(accounts[1]).mint("https://universe.xyz");
@@ -445,12 +443,272 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
     expect(escrowBalanceAfterCancel).to.equal(450);
 
     const sellerBalance = await mockToken.balanceOf(accounts[1].address);
-    // Seller Balance is formed after the Royalties have been paid to the collection and After the Dao fee has been paid
-    // As we know the amount to pay per NFT is 50
-    // As we know the royalties so far are 5
-    // The Dao fee is fomed by daoFeeBps.mul(amountToPay).div(10000); === (2500 * 50) / 10000 = 12.5
-    // So when we sum those fees 5 + 12.5 = 17
-    // From the sell price 50 - 17 = 33
+    // Seller Balance is formed after NFT Royalties & Dao Fees are paid
+    // Token Cost = 50, Collection Royalties = 5, DAO Fee = 12
+    // Fees Sum =  5 + 12 = 17
+    // Amount = 50 - 17 = 33
     expect(sellerBalance).to.equal(33);
+  });
+
+  it("should successfully Deduct NFT Level Royalties from the Seller Revenue", async () => {
+    const { erc721FloorBidMatcher, mockNFT, mockToken, royaltiesRegistry } = await loadFixture(
+      deployedContracts
+    );
+
+    const erc20TransferProxy = await erc721FloorBidMatcher.erc20TransferProxy();
+    const nftTransferProxy = await erc721FloorBidMatcher.nftTransferProxy();
+    const accounts = await ethers.getSigners();
+    const currentTime = Math.round(new Date().getTime() / 1000);
+    const endTime = currentTime + 100;
+
+    await mockToken
+      .connect(accounts[0])
+      .approve(erc20TransferProxy, ethers.constants.MaxUint256);
+
+    // Price Per Token = amount / tokens.length = 500 / 10 = 50;
+    await expect(
+      erc721FloorBidMatcher
+        .connect(accounts[0])
+        .createBuyOrder(mockNFT.address, mockToken.address, 10, 500, endTime)
+    ).to.be.emit(erc721FloorBidMatcher, "LogCreateBuyOrder");
+
+    const orderId = await erc721FloorBidMatcher.ordersCount();
+
+    const balance = await mockToken.balanceOf(erc721FloorBidMatcher.address);
+    expect(balance).to.equal(500);
+
+    for (let i = 0; i < 20; i++) {
+      await mockNFT.connect(accounts[1]).mint("https://universe.xyz");
+      await mockNFT.connect(accounts[1]).approve(nftTransferProxy, i + 1);
+    }
+
+    // Add 10% Royalties to a specific NFT = (50 * 1000 BPS) / 10000 = 5 ETH
+    await royaltiesRegistry.setRoyaltiesByTokenAndTokenId(mockNFT.address, 5, [
+      [accounts[5].address, 1000],
+    ]);
+
+    // Match and sell one token
+    await expect(
+      erc721FloorBidMatcher
+        .connect(accounts[1])
+        .matchBuyOrder(orderId, [5])
+    ).to.be.emit(erc721FloorBidMatcher, "LogMatchBuyOrder");
+
+    const escrowBalanceAfterCancel = await mockToken.balanceOf(erc721FloorBidMatcher.address);
+
+    // After the match we should have 500 - 50 (NFT price) = 450
+    expect(escrowBalanceAfterCancel).to.equal(450);
+
+    const sellerBalance = await mockToken.balanceOf(accounts[1].address);
+    // Seller Balance is formed after NFT Royalties & Dao Fees are paid
+    // Token Cost = 50, NFT Royalties = 5, DAO Fee = 12
+    // Fees Sum =  5 + 12 = 17
+    // Amount = 50 - 17 = 33
+    expect(sellerBalance).to.equal(33);
+  });
+
+  it("should successfully Deduct NFT && Collection Level Royalties from the Seller Revenue", async () => {
+    const { erc721FloorBidMatcher, mockNFT, mockToken, royaltiesRegistry } = await loadFixture(
+      deployedContracts
+    );
+
+    const erc20TransferProxy = await erc721FloorBidMatcher.erc20TransferProxy();
+    const nftTransferProxy = await erc721FloorBidMatcher.nftTransferProxy();
+    const accounts = await ethers.getSigners();
+    const currentTime = Math.round(new Date().getTime() / 1000);
+    const endTime = currentTime + 100;
+
+    await mockToken
+      .connect(accounts[0])
+      .approve(erc20TransferProxy, ethers.constants.MaxUint256);
+
+    // Price Per Token = amount / tokens.length = 500 / 10 = 50;
+    await expect(
+      erc721FloorBidMatcher
+        .connect(accounts[0])
+        .createBuyOrder(mockNFT.address, mockToken.address, 10, 500, endTime)
+    ).to.be.emit(erc721FloorBidMatcher, "LogCreateBuyOrder");
+
+    const orderId = await erc721FloorBidMatcher.ordersCount();
+
+    const balance = await mockToken.balanceOf(erc721FloorBidMatcher.address);
+    expect(balance).to.equal(500);
+
+    // Assign 10% Collection Royalties which is equal to (50 * 1000 BPS) / 10000 = 5 Eth
+    await royaltiesRegistry.setRoyaltiesByToken(mockNFT.address, [
+      [accounts[5].address, 1000],
+    ]);
+
+    for (let i = 0; i < 20; i++) {
+      await mockNFT.connect(accounts[1]).mint("https://universe.xyz");
+      await mockNFT.connect(accounts[1]).approve(nftTransferProxy, i + 1);
+    }
+
+    // Add 10% Royalties to a specific NFT = (45 * 1000 BPS) / 10000 = 4.5 ETH
+    await royaltiesRegistry.setRoyaltiesByTokenAndTokenId(mockNFT.address, 5, [
+      [accounts[5].address, 1000],
+    ]);
+
+    // Match and sell one token
+    await expect(
+      erc721FloorBidMatcher
+        .connect(accounts[1])
+        .matchBuyOrder(orderId, [5])
+    ).to.be.emit(erc721FloorBidMatcher, "LogMatchBuyOrder");
+
+    const escrowBalanceAfterCancel = await mockToken.balanceOf(erc721FloorBidMatcher.address);
+
+    // // After the match we should have 500 - 50 (NFT price) = 450
+    expect(escrowBalanceAfterCancel).to.equal(450);
+
+    const sellerBalance = await mockToken.balanceOf(accounts[1].address);
+    // Seller Balance is formed after NFT Royalties & Collection Royalties & Dao Fees are paid
+    // Token Cost = 50, NFT Royalties = 5, Collection Royalties = 4.5, DAO Fee = 12
+    // Fees Sum =  5 + 4 + 12.5 = 21.5
+    // Amount = 50 - 21 = 29
+    expect(sellerBalance).to.equal(29);
+  });
+
+  it("should successfully DeductMultiple NFT && Collection Level Royalties from the Seller Revenue", async () => {
+    const { erc721FloorBidMatcher, mockNFT, mockToken, royaltiesRegistry } = await loadFixture(
+      deployedContracts
+    );
+
+    const erc20TransferProxy = await erc721FloorBidMatcher.erc20TransferProxy();
+    const nftTransferProxy = await erc721FloorBidMatcher.nftTransferProxy();
+    const accounts = await ethers.getSigners();
+    const currentTime = Math.round(new Date().getTime() / 1000);
+    const endTime = currentTime + 100;
+
+    await mockToken
+      .connect(accounts[0])
+      .approve(erc20TransferProxy, ethers.constants.MaxUint256);
+
+    // Price Per Token = amount / tokens.length = 500 / 10 = 50;
+    await expect(
+      erc721FloorBidMatcher
+        .connect(accounts[0])
+        .createBuyOrder(mockNFT.address, mockToken.address, 10, 500, endTime)
+    ).to.be.emit(erc721FloorBidMatcher, "LogCreateBuyOrder");
+
+    const orderId = await erc721FloorBidMatcher.ordersCount();
+
+    const balance = await mockToken.balanceOf(erc721FloorBidMatcher.address);
+    expect(balance).to.equal(500);
+
+    // Assign 10% Collection Royalties which is equal to (50 * 1000 BPS) / 10000 = 5 Eth per address = 25 total
+    await royaltiesRegistry.setRoyaltiesByToken(mockNFT.address, [
+      [accounts[6].address, 1000],
+      [accounts[7].address, 1000],
+      [accounts[8].address, 1000],
+      [accounts[9].address, 1000],
+      [accounts[10].address, 1000],
+    ]);
+
+    for (let i = 0; i < 20; i++) {
+      await mockNFT.connect(accounts[1]).mint("https://universe.xyz");
+      await mockNFT.connect(accounts[1]).approve(nftTransferProxy, i + 1);
+    }
+
+    // Assign 10% Royalties to a specific NFT = (5 * 10% from 25) = 10 total;
+    await royaltiesRegistry.setRoyaltiesByTokenAndTokenId(mockNFT.address, 5, [
+      [accounts[6].address, 1000],
+      [accounts[7].address, 1000],
+      [accounts[8].address, 1000],
+      [accounts[9].address, 1000],
+      [accounts[10].address, 1000],
+    ]);
+
+    // Match and sell one token
+    await expect(
+      erc721FloorBidMatcher
+        .connect(accounts[1])
+        .matchBuyOrder(orderId, [5])
+    ).to.be.emit(erc721FloorBidMatcher, "LogMatchBuyOrder");
+
+    const escrowBalanceAfterCancel = await mockToken.balanceOf(erc721FloorBidMatcher.address);
+
+    // // After the match we should have 500 - 50 (NFT price) = 450
+    expect(escrowBalanceAfterCancel).to.equal(450);
+
+    const sellerBalance = await mockToken.balanceOf(accounts[1].address);
+    // Seller Balance is formed after NFT Royalties & Collection Royalties & Dao Fees are paid
+    // Token Cost = 50, NFT Royalties = 25, Collection Royalties = 10, DAO Fee = 12
+    // Fees Sum = 25 + 10 + 12 = 47
+    // Amount = 50 - 47 = 3
+    expect(sellerBalance).to.equal(3);
+  });
+
+  it("should successfully Deduct Multiple NFT && Collection Level Royalties from the Seller Revenue with up to 10 total splits (above 10 should be excluded)", async () => {
+    const { erc721FloorBidMatcher, mockNFT, mockToken, royaltiesRegistry } = await loadFixture(
+      deployedContracts
+    );
+
+    const erc20TransferProxy = await erc721FloorBidMatcher.erc20TransferProxy();
+    const nftTransferProxy = await erc721FloorBidMatcher.nftTransferProxy();
+    const accounts = await ethers.getSigners();
+    const currentTime = Math.round(new Date().getTime() / 1000);
+    const endTime = currentTime + 100;
+
+    await mockToken
+      .connect(accounts[0])
+      .approve(erc20TransferProxy, ethers.constants.MaxUint256);
+
+    // Price Per Token = amount / tokens.length = 500 / 10 = 50;
+    await expect(
+      erc721FloorBidMatcher
+        .connect(accounts[0])
+        .createBuyOrder(mockNFT.address, mockToken.address, 10, 500, endTime)
+    ).to.be.emit(erc721FloorBidMatcher, "LogCreateBuyOrder");
+
+    const orderId = await erc721FloorBidMatcher.ordersCount();
+
+    const balance = await mockToken.balanceOf(erc721FloorBidMatcher.address);
+    expect(balance).to.equal(500);
+
+    // Assign Collection Royalties to the collection we pass 6 royalties the 6th should be excluded from the calcs
+    await royaltiesRegistry.setRoyaltiesByToken(mockNFT.address, [
+      [accounts[6].address, 1000],
+      [accounts[7].address, 1000],
+      [accounts[8].address, 1000],
+      [accounts[9].address, 1000],
+      [accounts[10].address, 1000],
+      [accounts[10].address, 1000],
+    ]);
+
+    for (let i = 0; i < 20; i++) {
+      await mockNFT.connect(accounts[1]).mint("https://universe.xyz");
+      await mockNFT.connect(accounts[1]).approve(nftTransferProxy, i + 1);
+    }
+
+    // Assign Royalties to a specific NFT we pass 6 royalties the 6th should be excluded from the calcs
+    await royaltiesRegistry.setRoyaltiesByTokenAndTokenId(mockNFT.address, 5, [
+      [accounts[6].address, 1000],
+      [accounts[7].address, 1000],
+      [accounts[8].address, 1000],
+      [accounts[9].address, 1000],
+      [accounts[10].address, 1000],
+      [accounts[10].address, 1000],
+    ]);
+
+    // Match and sell one token
+    // The token has Royalties assigned to it
+    await expect(
+      erc721FloorBidMatcher
+        .connect(accounts[1])
+        .matchBuyOrder(orderId, [5])
+    ).to.be.emit(erc721FloorBidMatcher, "LogMatchBuyOrder");
+
+    const escrowBalanceAfterCancel = await mockToken.balanceOf(erc721FloorBidMatcher.address);
+
+    // // After the match we should have 500 - 50 (NFT price) = 450
+    expect(escrowBalanceAfterCancel).to.equal(450);
+
+    const sellerBalance = await mockToken.balanceOf(accounts[1].address);
+    // Seller Balance is formed after NFT Royalties & Collection Royalties & Dao Fees are paid
+    // Token Cost = 50, NFT Royalties = 25, Collection Royalties = 10, DAO Fee = 12
+    // Fees Sum = 25 + 10 + 12 = 47
+    // Amount = 50 - 47 = 3
+    expect(sellerBalance).to.equal(3);
   });
 });

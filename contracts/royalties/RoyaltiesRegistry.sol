@@ -59,35 +59,31 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
         }
     }
 
-    function getRoyalties(address token, uint tokenId) override external returns (LibPart.Part[] memory) {
-        RoyaltiesSet memory royaltiesSetNFT = royaltiesByTokenAndTokenId[keccak256(abi.encode(token, tokenId))];
+    function getRoyalties(address token, uint tokenId) override external returns (LibPart.Part[] memory nftRoyalties, LibPart.Part[] memory collectionRoyalties) {
         RoyaltiesSet memory royaltiesSetCollection = royaltiesByToken[token];
-        uint combinedLength = royaltiesSetNFT.royalties.length + royaltiesSetCollection.royalties.length;
-        LibPart.Part[] memory combinedRoyalties = new LibPart.Part[](combinedLength);
-
-        // We combine the two royalties arrays into one with precendce to the NFT royalties
-        if (royaltiesSetNFT.initialized) {
-            combinedRoyalties = royaltiesSetNFT.royalties;
-        }
+        RoyaltiesSet memory royaltiesSetNFT = royaltiesByTokenAndTokenId[keccak256(abi.encode(token, tokenId))];
 
         if (royaltiesSetCollection.initialized) {
-            // Add a limitation of 5, due to gas costs (the same amount is used into the Auction Contracts)
-            uint startIndex = royaltiesSetNFT.royalties.length;
-            for (uint i = 0; i < royaltiesSetCollection.royalties.length && i < 5; i++) {
-                combinedRoyalties[startIndex] = royaltiesSetCollection.royalties[i];
-                startIndex = startIndex + 1;
-            }
+            collectionRoyalties = royaltiesSetCollection.royalties;
         }
 
-        if (combinedRoyalties.length > 0) {
-            return combinedRoyalties;
+        if (royaltiesSetNFT.initialized) {
+            nftRoyalties = royaltiesSetNFT.royalties;
         }
+
+        if (royaltiesSetNFT.initialized || royaltiesSetCollection.initialized ) {
+            return (nftRoyalties, collectionRoyalties);
+        }
+
         (bool result, LibPart.Part[] memory resultRoyalties) = providerExtractor(token, tokenId);
         if (result == false) {
             resultRoyalties = royaltiesFromContract(token, tokenId);
         }
         setRoyaltiesCacheByTokenAndTokenId(token, tokenId, resultRoyalties);
-        return resultRoyalties;
+
+        nftRoyalties = resultRoyalties;
+
+        return (nftRoyalties, collectionRoyalties);
     }
 
     function setRoyaltiesCacheByTokenAndTokenId(address token, uint tokenId, LibPart.Part[] memory royalties) internal {
@@ -159,7 +155,7 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
         address providerAddress = royaltiesProviders[token];
         if (providerAddress != address(0x0)) {
             IRoyaltiesProvider provider = IRoyaltiesProvider(providerAddress);
-            try provider.getRoyalties(token, tokenId) returns (LibPart.Part[] memory royaltiesByProvider) {
+            try provider.getRoyalties(token, tokenId) returns (LibPart.Part[] memory royaltiesByProvider, LibPart.Part[] memory collectionFees) {
                 royalties = royaltiesByProvider;
                 result = true;
             } catch {}
