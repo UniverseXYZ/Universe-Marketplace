@@ -105,10 +105,10 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
     }
 
     function transferAllFees(FeeCalculateInfo memory feeCalculateInfo) internal returns (uint allFeesValue) {
-        uint daoFeeValue = transferDaoFee(feeCalculateInfo.matchCalculate, feeCalculateInfo.amount, feeCalculateInfo.from, feeCalculateInfo.transferDirection);
-        uint revenueSplitsValue = transferRevenueSplits(feeCalculateInfo.matchCalculate, feeCalculateInfo.amount, feeCalculateInfo.from, feeCalculateInfo.revenueSplits, feeCalculateInfo.transferDirection);
         uint royaltiesValue = transferRoyaltyFees(feeCalculateInfo.matchCalculate, feeCalculateInfo.matchNft, feeCalculateInfo.matchNftValue, feeCalculateInfo.amount, feeCalculateInfo.from, feeCalculateInfo.transferDirection);
-        return daoFeeValue.add(revenueSplitsValue).add(royaltiesValue);
+        uint daoFeeValue = transferDaoFee(feeCalculateInfo.matchCalculate, feeCalculateInfo.amount.sub(royaltiesValue), feeCalculateInfo.from, feeCalculateInfo.transferDirection);
+        uint revenueSplitsValue = transferRevenueSplits(feeCalculateInfo.matchCalculate, feeCalculateInfo.amount.sub(royaltiesValue).sub(daoFeeValue), feeCalculateInfo.from, feeCalculateInfo.revenueSplits, feeCalculateInfo.transferDirection);
+        return royaltiesValue.add(daoFeeValue).add(revenueSplitsValue);
     }
 
     function transferDaoFee(
@@ -176,8 +176,10 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
         if (matchNft.assetClass == LibAsset.ERC1155_ASSET_CLASS || matchNft.assetClass == LibAsset.ERC721_ASSET_CLASS) {
             (address token, uint tokenId) = abi.decode(matchNft.data, (address, uint));
             (LibPart.Part[] memory fees, LibPart.Part[] memory collectionRoyalties) = royaltiesRegistry.getRoyalties(token, tokenId);
-            totalAmount = transferFees(matchCalculate, fees, amount, from, transferDirection);
-            totalAmount = totalAmount + transferFees(matchCalculate, collectionRoyalties, amount, from, transferDirection);
+
+            uint256 collectionFees = transferFees(matchCalculate, collectionRoyalties, amount, from, transferDirection);
+            uint256 nftFees = transferFees(matchCalculate, fees, amount - collectionFees, from, transferDirection);
+            totalAmount = collectionFees + nftFees;
         } else if (matchNft.assetClass == LibERC1155LazyMint.ERC1155_LAZY_ASSET_CLASS) {
             (address token, LibERC1155LazyMint.Mint1155Data memory data) = abi.decode(matchNft.data, (address, LibERC1155LazyMint.Mint1155Data));
             LibPart.Part[] memory fees = data.royalties;
@@ -191,12 +193,25 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
             for (uint256 i = 0; i < erc721BundleItems.length; i++) {
                 for (uint256 j = 0; j < erc721BundleItems[i].tokenIds.length; j++){
                     (LibPart.Part[] memory fees, LibPart.Part[] memory collectionRoyalties) = royaltiesRegistry.getRoyalties(erc721BundleItems[i].tokenAddress, erc721BundleItems[i].tokenIds[j]);
-                    totalAmount = totalAmount.add(transferFees(matchCalculate, fees, amount.div(matchNftValue), from, transferDirection));
-                    totalAmount = totalAmount.add(transferFees(matchCalculate, collectionRoyalties, amount.div(matchNftValue), from, transferDirection));
-                } 
+                    totalAmount = totalAmount.add(_transferRoyaltyRegistryFees(matchCalculate, matchNftValue, fees, collectionRoyalties, amount, from, transferDirection));
+                }
             }
         }
         return totalAmount;
+    }
+
+    function _transferRoyaltyRegistryFees(
+        LibAsset.AssetType memory matchCalculate,
+        uint matchNftValue,
+        LibPart.Part[] memory nftRoyalties,
+        LibPart.Part[] memory collectionRoyalties,
+        uint amount,
+        address from,
+        bytes4 transferDirection
+    ) internal returns (uint256 totalRoyaltiesFee) {
+        uint256 collectionFees = transferFees(matchCalculate, collectionRoyalties, amount.div(matchNftValue), from, transferDirection);
+        uint256 nftFees = transferFees(matchCalculate, nftRoyalties, amount.div(matchNftValue).sub(collectionFees), from, transferDirection);
+        return totalRoyaltiesFee = collectionFees.add(nftFees);
     }
 
     function encodeOrderData(LibOrderData.Data memory data) external pure returns (bytes memory encodedOrderData) {
