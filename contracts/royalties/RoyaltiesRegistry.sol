@@ -59,21 +59,31 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
         }
     }
 
-    function getRoyalties(address token, uint tokenId) override external returns (LibPart.Part[] memory) {
-        RoyaltiesSet memory royaltiesSet = royaltiesByTokenAndTokenId[keccak256(abi.encode(token, tokenId))];
-        if (royaltiesSet.initialized) {
-            return royaltiesSet.royalties;
+    function getRoyalties(address token, uint tokenId) override external returns (LibPart.Part[] memory nftRoyalties, LibPart.Part[] memory collectionRoyalties) {
+        RoyaltiesSet memory royaltiesSetCollection = royaltiesByToken[token];
+        RoyaltiesSet memory royaltiesSetNFT = royaltiesByTokenAndTokenId[keccak256(abi.encode(token, tokenId))];
+
+        if (royaltiesSetCollection.initialized) {
+            collectionRoyalties = royaltiesSetCollection.royalties;
         }
-        royaltiesSet = royaltiesByToken[token];
-        if (royaltiesSet.initialized) {
-            return royaltiesSet.royalties;
+
+        if (royaltiesSetNFT.initialized) {
+            nftRoyalties = royaltiesSetNFT.royalties;
         }
+
+        if (royaltiesSetNFT.initialized || royaltiesSetCollection.initialized ) {
+            return (nftRoyalties, collectionRoyalties);
+        }
+
         (bool result, LibPart.Part[] memory resultRoyalties) = providerExtractor(token, tokenId);
         if (result == false) {
             resultRoyalties = royaltiesFromContract(token, tokenId);
         }
         setRoyaltiesCacheByTokenAndTokenId(token, tokenId, resultRoyalties);
-        return resultRoyalties;
+
+        nftRoyalties = resultRoyalties;
+
+        return (nftRoyalties, collectionRoyalties);
     }
 
     function setRoyaltiesCacheByTokenAndTokenId(address token, uint tokenId, LibPart.Part[] memory royalties) internal {
@@ -145,7 +155,7 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
         address providerAddress = royaltiesProviders[token];
         if (providerAddress != address(0x0)) {
             IRoyaltiesProvider provider = IRoyaltiesProvider(providerAddress);
-            try provider.getRoyalties(token, tokenId) returns (LibPart.Part[] memory royaltiesByProvider) {
+            try provider.getRoyalties(token, tokenId) returns (LibPart.Part[] memory royaltiesByProvider, LibPart.Part[] memory collectionFees) {
                 royalties = royaltiesByProvider;
                 result = true;
             } catch {}
