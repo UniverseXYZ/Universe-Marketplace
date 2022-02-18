@@ -221,8 +221,6 @@ contract ERC721FloorBidMatcher is
             "Order expired"
         );
 
-        uint256 amountToPay = tokenIds.length.mul(order.tokenPrice);
-        uint256 daoFee = daoFeeBps.mul(amountToPay).div(10000);
         uint256 totalSecondaryFees;
 
         for (uint256 i = 0; i < tokenIds.length; i += 1) {
@@ -243,6 +241,9 @@ contract ERC721FloorBidMatcher is
             order.erc721TokenIdsSold.push(tokenIds[i]);
             totalSecondaryFees = totalSecondaryFees.add(secondarySaleFees);
         }
+
+        uint256 amountToPay = tokenIds.length.mul(order.tokenPrice);
+        uint256 daoFee = daoFeeBps.mul(amountToPay - totalSecondaryFees).div(10000);
 
         if (order.paymentTokenAddress == address(0)) {
             (bool daoTransferSuccess, ) = payable(daoAddress).call{

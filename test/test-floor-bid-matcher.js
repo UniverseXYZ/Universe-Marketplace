@@ -444,10 +444,10 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
 
     const sellerBalance = await mockToken.balanceOf(accounts[1].address);
     // Seller Balance is formed after NFT Royalties & Dao Fees are paid
-    // Token Cost = 50, Collection Royalties = 5, DAO Fee = 12
-    // Fees Sum =  5 + 12 = 17
-    // Amount = 50 - 17 = 33
-    expect(sellerBalance).to.equal(33);
+    // Token Cost = 50, Collection Royalties = 5, DAO Fee = 11
+    // Fees Sum =  5 + 11 = 16
+    // Amount = 50 - 16 = 34
+    expect(sellerBalance).to.equal(34);
   });
 
   it("should successfully Deduct NFT Level Royalties from the Seller Revenue", async () => {
@@ -501,10 +501,10 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
 
     const sellerBalance = await mockToken.balanceOf(accounts[1].address);
     // Seller Balance is formed after NFT Royalties & Dao Fees are paid
-    // Token Cost = 50, NFT Royalties = 5, DAO Fee = 12
-    // Fees Sum =  5 + 12 = 17
-    // Amount = 50 - 17 = 33
-    expect(sellerBalance).to.equal(33);
+    // Token Cost = 50, NFT Royalties = 5, DAO Fee = 11
+    // Fees Sum =  5 + 11 = 16
+    // Amount = 50 - 17 = 34
+    expect(sellerBalance).to.equal(34);
   });
 
   it("should successfully Deduct NFT && Collection Level Royalties from the Seller Revenue", async () => {
@@ -563,13 +563,13 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
 
     const sellerBalance = await mockToken.balanceOf(accounts[1].address);
     // Seller Balance is formed after NFT Royalties & Collection Royalties & Dao Fees are paid
-    // Token Cost = 50, NFT Royalties = 5, Collection Royalties = 4.5, DAO Fee = 12
-    // Fees Sum =  5 + 4 + 12.5 = 21.5
-    // Amount = 50 - 21 = 29
-    expect(sellerBalance).to.equal(29);
+    // Token Cost = 50, NFT Royalties = 5, Collection Royalties = 4.5, DAO Fee = 10
+    // Fees Sum =  5 + 4 + 10 = 19
+    // Amount = 50 - 19 = 31
+    expect(sellerBalance).to.equal(31);
   });
 
-  it("should successfully DeductMultiple NFT && Collection Level Royalties from the Seller Revenue", async () => {
+  it("should successfully Deduct Multiple NFT && Collection Level Royalties from the Seller Revenue", async () => {
     const { erc721FloorBidMatcher, mockNFT, mockToken, royaltiesRegistry } = await loadFixture(
       deployedContracts
     );
@@ -633,10 +633,10 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
 
     const sellerBalance = await mockToken.balanceOf(accounts[1].address);
     // Seller Balance is formed after NFT Royalties & Collection Royalties & Dao Fees are paid
-    // Token Cost = 50, NFT Royalties = 25, Collection Royalties = 10, DAO Fee = 12
-    // Fees Sum = 25 + 10 + 12 = 47
-    // Amount = 50 - 47 = 3
-    expect(sellerBalance).to.equal(3);
+    // Token Cost = 50, NFT Royalties = 25, Collection Royalties = 10, DAO Fee = 3
+    // Fees Sum = 25 + 10 + 3 = 38
+    // Amount = 50 - 38 = 12
+    expect(sellerBalance).to.equal(12);
   });
 
   it("should successfully Deduct Multiple NFT && Collection Level Royalties from the Seller Revenue with up to 10 total splits (above 10 should be excluded)", async () => {
@@ -706,9 +706,9 @@ describe("ERC721 Floor Bid Matcher Tests", () => {
 
     const sellerBalance = await mockToken.balanceOf(accounts[1].address);
     // Seller Balance is formed after NFT Royalties & Collection Royalties & Dao Fees are paid
-    // Token Cost = 50, NFT Royalties = 25, Collection Royalties = 10, DAO Fee = 12
-    // Fees Sum = 25 + 10 + 12 = 47
-    // Amount = 50 - 47 = 3
-    expect(sellerBalance).to.equal(3);
+    // Token Cost = 50, NFT Royalties = 25, Collection Royalties = 10, DAO Fee = 3
+    // Fees Sum = 25 + 10 + 3 = 38
+    // Amount = 50 - 38 = 12
+    expect(sellerBalance).to.equal(12);
   });
 });
