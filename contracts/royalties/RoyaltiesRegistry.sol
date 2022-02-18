@@ -60,13 +60,27 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
     }
 
     function getRoyalties(address token, uint tokenId) override external returns (LibPart.Part[] memory) {
-        RoyaltiesSet memory royaltiesSet = royaltiesByTokenAndTokenId[keccak256(abi.encode(token, tokenId))];
-        if (royaltiesSet.initialized) {
-            return royaltiesSet.royalties;
+        RoyaltiesSet memory royaltiesSetNFT = royaltiesByTokenAndTokenId[keccak256(abi.encode(token, tokenId))];
+        RoyaltiesSet memory royaltiesSetCollection = royaltiesByToken[token];
+        uint combinedLength = royaltiesSetNFT.royalties.length + royaltiesSetCollection.royalties.length;
+        LibPart.Part[] memory combinedRoyalties = new LibPart.Part[](combinedLength);
+
+        // We combine the two royalties arrays into one with precendce to the NFT royalties
+        if (royaltiesSetNFT.initialized) {
+            combinedRoyalties = royaltiesSetNFT.royalties;
         }
-        royaltiesSet = royaltiesByToken[token];
-        if (royaltiesSet.initialized) {
-            return royaltiesSet.royalties;
+
+        if (royaltiesSetCollection.initialized) {
+            // Add a limitation of 5, due to gas costs (the same amount is used into the Auction Contracts)
+            uint startIndex = royaltiesSetNFT.royalties.length;
+            for (uint i = 0; i < royaltiesSetCollection.royalties.length && i < 5; i++) {
+                combinedRoyalties[startIndex] = royaltiesSetCollection.royalties[i];
+                startIndex = startIndex + 1;
+            }
+        }
+
+        if (combinedRoyalties.length > 0) {
+            return combinedRoyalties;
         }
         (bool result, LibPart.Part[] memory resultRoyalties) = providerExtractor(token, tokenId);
         if (result == false) {
