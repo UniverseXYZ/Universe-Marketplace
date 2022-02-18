@@ -131,7 +131,7 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
     ) internal returns (uint) {
         uint sumBps = 0;
         uint restValue = amount;
-        for (uint256 i = 0; i < revenueSplits.length; i++) {
+        for (uint256 i = 0; i < revenueSplits.length && i < 5; i++) {
             uint currentAmount = amount.bp(revenueSplits[i].value);
             sumBps = sumBps.add(revenueSplits[i].value);
             if (currentAmount > 0) {
@@ -152,7 +152,7 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
     ) internal returns (uint) {
         uint totalFees = 0;
         uint restValue = amount;
-        for (uint256 i = 0; i < fees.length; i++) {
+        for (uint256 i = 0; i < fees.length && i < 5; i++) {
             totalFees = totalFees.add(fees[i].value);
             (uint newRestValue, uint feeValue) = subFeeInBp(restValue, amount,  fees[i].value);
             restValue = newRestValue;

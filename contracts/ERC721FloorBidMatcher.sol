@@ -407,47 +407,15 @@ contract ERC721FloorBidMatcher is
             .getRoyalties(erc721TokenAddress, tokenId);
 
         uint256 totalFees = 0;
-        if (nftRoyalties.length > 0) {
-            uint256 value = amount;
-
-            for (uint256 i = 0; i < nftRoyalties.length && i < 5; i += 1) {
-                SecondaryFee memory interimFee = subFee(
-                    value,
-                    amount.mul(nftRoyalties[i].value).div(10000)
-                );
-                value = interimFee.remainingValue;
-                if (interimFee.feeValue > 0) {
-                    if (paymentTokenAddress == address(0)) {
-                        (bool success, ) = payable(nftRoyalties[i].account).call{
-                            value: interimFee.feeValue
-                        }("");
-                        require(success, "Failed");
-                    } else {
-                        IERC20TransferProxy(erc20TransferProxy)
-                            .erc20safeTransferFrom(
-                                IERC20Upgradeable(paymentTokenAddress),
-                                address(this),
-                                address(nftRoyalties[i].account),
-                                interimFee.feeValue
-                            );
-                    }
-                    totalFees = totalFees.add(interimFee.feeValue);
-                }
-            }
-        }
-
-        // Calculate the Collection Fees from the remained amount
         if (collectionRoyalties.length > 0) {
-            uint256 leftAmount = amount - totalFees;
-            uint256 value = amount - totalFees;
+            uint256 value = amount;
 
             for (uint256 i = 0; i < collectionRoyalties.length && i < 5; i += 1) {
                 SecondaryFee memory interimFee = subFee(
                     value,
-                    leftAmount.mul(collectionRoyalties[i].value).div(10000)
+                    amount.mul(collectionRoyalties[i].value).div(10000)
                 );
                 value = interimFee.remainingValue;
-
                 if (interimFee.feeValue > 0) {
                     if (paymentTokenAddress == address(0)) {
                         (bool success, ) = payable(collectionRoyalties[i].account).call{
@@ -460,6 +428,38 @@ contract ERC721FloorBidMatcher is
                                 IERC20Upgradeable(paymentTokenAddress),
                                 address(this),
                                 address(collectionRoyalties[i].account),
+                                interimFee.feeValue
+                            );
+                    }
+                    totalFees = totalFees.add(interimFee.feeValue);
+                }
+            }
+        }
+
+        // Calculate the Collection Fees from the remained amount
+        if (nftRoyalties.length > 0) {
+            uint256 leftAmount = amount - totalFees;
+            uint256 value = amount - totalFees;
+
+            for (uint256 i = 0; i < nftRoyalties.length && i < 5; i += 1) {
+                SecondaryFee memory interimFee = subFee(
+                    value,
+                    leftAmount.mul(nftRoyalties[i].value).div(10000)
+                );
+                value = interimFee.remainingValue;
+
+                if (interimFee.feeValue > 0) {
+                    if (paymentTokenAddress == address(0)) {
+                        (bool success, ) = payable(nftRoyalties[i].account).call{
+                            value: interimFee.feeValue
+                        }("");
+                        require(success, "Failed");
+                    } else {
+                        IERC20TransferProxy(erc20TransferProxy)
+                            .erc20safeTransferFrom(
+                                IERC20Upgradeable(paymentTokenAddress),
+                                address(this),
+                                address(nftRoyalties[i].account),
                                 interimFee.feeValue
                             );
                     }
