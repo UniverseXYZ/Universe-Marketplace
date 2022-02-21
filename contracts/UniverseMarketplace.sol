@@ -18,6 +18,5 @@ contract UniverseMarketplace is UniverseMarketplaceCore, UniverseTransferManager
         __Ownable_init_unchained();
         __TransferExecutor_init_unchained(_transferProxy, _erc20TransferProxy, maxBundleSize);
         __UniverseTransferManager_init_unchained(newProtocolFee, newDefaultFeeReceiver, newRoyaltiesProvider);
-        __OrderValidator_init_unchained();
     }
 }
