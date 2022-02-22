@@ -86,6 +86,7 @@ describe("Match Orders Tests", () => {
       [accounts[5].address, 1000],
       [accounts[6].address, 1000],
     ]);
+    await universeMarketplace.activate()
 
     return {
       universeMarketplace,
