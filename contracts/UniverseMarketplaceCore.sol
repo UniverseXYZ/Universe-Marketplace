@@ -14,7 +14,7 @@ abstract contract UniverseMarketplaceCore is Initializable, OwnableUpgradeable, 
     using LibTransfer for address;
 
     uint256 private constant UINT256_MAX = 2 ** 256 - 1;
-    bool public active = false;
+    bool public active;
     
     //state of the orders
     mapping(bytes32 => uint) public fills;
