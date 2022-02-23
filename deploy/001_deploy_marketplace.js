@@ -57,18 +57,27 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
       execute: {
         methodName: "__UniverseMarketplace_init",
         args: [
-          nftTransferProxy.address,
-          erc20TransferProxy.address,
           process.env.DAO_FEE,
           process.env.DAO_ADDRESS,
           royaltiesRegistry.address,
           process.env.MAX_BUNDLE_SIZE,
+          process.env.MAX_BATCH_TRANSFER_SIZE
         ],
       },
     },
   });
   console.log(
     `Universe Marketplace initialized at: ${universeMarketplace.address}`
+  );
+
+  await execute(
+    "UniverseMarketplace",
+    {
+      from: deployer,
+      log: true,
+    },
+    "transferOwnership",
+    process.env.DAO_ADDRESS
   );
 
   const erc721FloorBidMatcher = await deploy("ERC721FloorBidMatcher", {
@@ -93,26 +102,6 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
   });
   console.log(
     `ERC721 Floor Bid Matcher initialized at: ${erc721FloorBidMatcher.address}`
-  );
-
-  await execute(
-    "ERC20TransferProxy",
-    {
-      from: deployer,
-      log: true,
-    },
-    "addOperator",
-    universeMarketplace.address
-  );
-
-  await execute(
-    "TransferProxy",
-    {
-      from: deployer,
-      log: true,
-    },
-    "addOperator",
-    universeMarketplace.address
   );
 
   await execute(

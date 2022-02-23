@@ -3,12 +3,39 @@ const { expect } = require("chai");
 const { waffle, ethers, upgrades } = require("hardhat");
 const { loadFixture } = waffle;
 
+const DAO_FEE = 2500;
+const DAO_ADDRESS = "0x67b93852482113375666a310ac292D61dDD4bbb9";
+const MAX_BUNDLE_SIZE = 10;
+const MAX_BATCH_TRANSFER_SIZE = 50;
+
 describe("ERC721 Batch Transfer Tests", () => {
   const deployedContracts = async () => {
-    const TransferProxy = await ethers.getContractFactory("TransferProxy");
-    const transferProxy = await upgrades.deployProxy(TransferProxy, [], {
-      initializer: "__TransferProxy_init",
-    });
+    const RoyaltiesRegistry = await ethers.getContractFactory(
+      "RoyaltiesRegistry"
+    );
+    const royaltiesRegistry = await upgrades.deployProxy(
+      RoyaltiesRegistry,
+      [],
+      {
+        initializer: "__RoyaltiesRegistry_init",
+      }
+    );
+
+    const UniverseMarketplace = await ethers.getContractFactory(
+      "UniverseMarketplace"
+    );
+
+    const universeMarketplace = await upgrades.deployProxy(
+      UniverseMarketplace,
+      [
+        DAO_FEE,
+        DAO_ADDRESS,
+        royaltiesRegistry.address,
+        MAX_BUNDLE_SIZE,
+        MAX_BATCH_TRANSFER_SIZE
+      ],
+      { initializer: "__UniverseMarketplace_init" }
+    );
 
     const MockNFT = await ethers.getContractFactory("MockNFT");
     const MockNFT2 = await ethers.getContractFactory("MockNFT");
@@ -18,11 +45,11 @@ describe("ERC721 Batch Transfer Tests", () => {
     const mockNFT2 = await MockNFT2.deploy();
     const mockToken = await MockToken.deploy(1000);
 
-    return { transferProxy, mockNFT, mockNFT2, mockToken };
+    return { universeMarketplace, mockNFT, mockNFT2, mockToken };
   };
 
   it("should successfully transfer multiple NFTs, from different collections", async () => {
-    const { transferProxy, mockNFT, mockNFT2 } = await loadFixture(
+    const { universeMarketplace, mockNFT, mockNFT2 } = await loadFixture(
       deployedContracts
     );
     const accounts = await ethers.getSigners();
@@ -31,17 +58,17 @@ describe("ERC721 Batch Transfer Tests", () => {
 
     for (let i = 0; i < 25; i++) {
       await mockNFT.connect(accounts[0]).mint("https://universe.xyz");
-      await mockNFT.connect(accounts[0]).approve(transferProxy.address, i + 1);
+      await mockNFT.connect(accounts[0]).approve(universeMarketplace.address, i + 1);
       nftsToTransfer.push([mockNFT.address, i + 1]);
     }
 
     for (let i = 0; i < 25; i++) {
       await mockNFT2.connect(accounts[0]).mint("https://universe.xyz");
-      await mockNFT2.connect(accounts[0]).approve(transferProxy.address, i + 1);
+      await mockNFT2.connect(accounts[0]).approve(universeMarketplace.address, i + 1);
       nftsToTransfer.push([mockNFT2.address, i + 1]);
     }
 
-    await transferProxy.erc721BatchTransfer(
+    await universeMarketplace.erc721BatchTransfer(
       nftsToTransfer,
       accounts[1].address
     );
@@ -58,7 +85,7 @@ describe("ERC721 Batch Transfer Tests", () => {
   });
 
   it("should not transfer more than 50 in one call", async () => {
-    const { transferProxy, mockNFT, mockNFT2 } = await loadFixture(
+    const { universeMarketplace, mockNFT, mockNFT2 } = await loadFixture(
       deployedContracts
     );
     const accounts = await ethers.getSigners();
@@ -67,23 +94,23 @@ describe("ERC721 Batch Transfer Tests", () => {
 
     for (let i = 0; i < 25; i++) {
       await mockNFT.connect(accounts[0]).mint("https://universe.xyz");
-      await mockNFT.connect(accounts[0]).approve(transferProxy.address, i + 1);
+      await mockNFT.connect(accounts[0]).approve(universeMarketplace.address, i + 1);
       nftsToTransfer.push([mockNFT.address, i + 1]);
     }
 
     for (let i = 0; i < 30; i++) {
       await mockNFT2.connect(accounts[0]).mint("https://universe.xyz");
-      await mockNFT2.connect(accounts[0]).approve(transferProxy.address, i + 1);
+      await mockNFT2.connect(accounts[0]).approve(universeMarketplace.address, i + 1);
       nftsToTransfer.push([mockNFT2.address, i + 1]);
     }
 
     await expect(
-      transferProxy.erc721BatchTransfer(nftsToTransfer, accounts[1].address)
-    ).to.be.revertedWith("Cannot transfer more than 50");
+      universeMarketplace.erc721BatchTransfer(nftsToTransfer, accounts[1].address)
+    ).to.be.revertedWith("Cannot transfer more than configured");
   });
 
   it("should not transfer NFTs is caller is not owner", async () => {
-    const { transferProxy, mockNFT, mockNFT2 } = await loadFixture(
+    const { universeMarketplace, mockNFT, mockNFT2 } = await loadFixture(
       deployedContracts
     );
     const accounts = await ethers.getSigners();
@@ -92,18 +119,18 @@ describe("ERC721 Batch Transfer Tests", () => {
 
     for (let i = 0; i < 5; i++) {
       await mockNFT.connect(accounts[1]).mint("https://universe.xyz");
-      await mockNFT.connect(accounts[1]).approve(transferProxy.address, i + 1);
+      await mockNFT.connect(accounts[1]).approve(universeMarketplace.address, i + 1);
       nftsToTransfer.push([mockNFT.address, i + 1]);
     }
 
     for (let i = 0; i < 5; i++) {
       await mockNFT2.connect(accounts[1]).mint("https://universe.xyz");
-      await mockNFT2.connect(accounts[1]).approve(transferProxy.address, i + 1);
+      await mockNFT2.connect(accounts[1]).approve(universeMarketplace.address, i + 1);
       nftsToTransfer.push([mockNFT2.address, i + 1]);
     }
 
     await expect(
-      transferProxy.erc721BatchTransfer(nftsToTransfer, accounts[2].address)
-    ).to.be.revertedWith("Not owner");
+      universeMarketplace.erc721BatchTransfer(nftsToTransfer, accounts[2].address)
+    ).to.be.revertedWith("ERC721: transfer of token that is not own");
   });
 });
