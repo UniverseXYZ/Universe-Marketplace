@@ -7,8 +7,8 @@ import "./interfaces/IRoyaltiesProvider.sol";
 
 contract UniverseMarketplace is UniverseMarketplaceCore, UniverseTransferManager {
     function __UniverseMarketplace_init(
-        uint protocolFee,
-        address defaultFeeReceiver,
+        uint daoFee,
+        address daoAddress,
         IRoyaltiesProvider royaltiesProvider,
         uint256 maxBundleSize,
         uint256 maxBatchTransferSize
@@ -16,6 +16,6 @@ contract UniverseMarketplace is UniverseMarketplaceCore, UniverseTransferManager
         __Context_init_unchained();
         __Ownable_init_unchained();
         __TransferExecutor_init_unchained(maxBundleSize, maxBatchTransferSize);
-        __UniverseTransferManager_init_unchained(protocolFee, defaultFeeReceiver, royaltiesProvider);
+        __UniverseTransferManager_init_unchained(daoFee, daoAddress, royaltiesProvider);
     }
 }

@@ -70,6 +70,16 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     `Universe Marketplace initialized at: ${universeMarketplace.address}`
   );
 
+  await execute(
+    "UniverseMarketplace",
+    {
+      from: deployer,
+      log: true,
+    },
+    "transferOwnership",
+    process.env.DAO_ADDRESS
+  );
+
   const erc721FloorBidMatcher = await deploy("ERC721FloorBidMatcher", {
     from: deployer,
     log: true,

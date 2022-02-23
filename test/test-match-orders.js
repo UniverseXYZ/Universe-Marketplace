@@ -69,6 +69,8 @@ describe("Match Orders Tests", () => {
       [accounts[6].address, 1000],
     ]);
 
+    await universeMarketplace.toggleActiveStatus(true);
+
     return {
       universeMarketplace,
       mockNFT,
@@ -932,5 +934,74 @@ describe("Match Orders Tests", () => {
 
     const tokenOwner = await mockNFT2.ownerOf(1);
     expect(tokenOwner).to.equal(accounts[1].address);
+  });
+
+  it("should not be able to match order if protocol is not active", async () => {
+    const { universeMarketplace, mockNFT } = await loadFixture(
+      deployedContracts
+    );
+
+    const accounts = await ethers.getSigners();
+
+    await universeMarketplace.toggleActiveStatus(false);
+
+    await mockNFT.connect(accounts[1]).mint("https://universe.xyz");
+    await mockNFT.connect(accounts[1]).approve(universeMarketplace.address, 1);
+
+    const erc721Qunatity = 1;
+
+    const left = Order(
+      accounts[1].address,
+      Asset(ERC721, encodeToken(mockNFT.address, 1), erc721Qunatity),
+      ZERO_ADDRESS,
+      Asset(ETH, "0x", 200),
+      1,
+      0,
+      0,
+      "0xffffffff",
+      "0x"
+    );
+
+    const right = Order(
+      accounts[0].address,
+      Asset(ETH, "0x", 200),
+      ZERO_ADDRESS,
+      Asset(ERC721, encodeToken(mockNFT.address, 1), erc721Qunatity),
+      1,
+      0,
+      0,
+      "0xffffffff",
+      "0x"
+    );
+
+    const signatureLeft = await sign(
+      left,
+      accounts[1],
+      universeMarketplace.address
+    );
+
+    const balanceBefore = await ethers.provider.getBalance(accounts[1].address);
+
+    await expect(
+      universeMarketplace
+        .connect(accounts[0])
+        .matchOrders(left, signatureLeft, right, "0x", {
+          value: 200,
+        })
+    ).revertedWith("Marketplace is not activated!");
+
+  });
+
+  it("only protocol owner should be able to activate/deactivate the protocol", async () => {
+    const { universeMarketplace } = await loadFixture(
+      deployedContracts
+    );
+
+    const accounts = await ethers.getSigners();
+
+    await universeMarketplace.transferOwnership(accounts[10].address);
+
+    await expect(universeMarketplace.connect(accounts[0]).toggleActiveStatus(false)).revertedWith("Ownable: caller is not the owner");;
+
   });
 });

@@ -14,6 +14,7 @@ abstract contract UniverseMarketplaceCore is Initializable, OwnableUpgradeable, 
     using LibTransfer for address;
 
     uint256 private constant UINT256_MAX = 2 ** 256 - 1;
+    bool public protocolActivated;
 
     //state of the orders
     mapping(bytes32 => uint) public fills;
@@ -22,7 +23,16 @@ abstract contract UniverseMarketplaceCore is Initializable, OwnableUpgradeable, 
     event Cancel(bytes32 indexed hash, address indexed maker, LibAsset.AssetType makeAssetType, LibAsset.AssetType takeAssetType);
     event Match(bytes32 indexed leftHash, bytes32 indexed rightHash, address indexed leftMaker, address rightMaker, uint newLeftFill, uint newRightFill, LibAsset.AssetType leftAsset, LibAsset.AssetType rightAsset);
 
-    function cancel(LibOrder.Order memory order) external {
+    modifier onlyActive {
+      require(protocolActivated, "Marketplace is not activated!");
+      _;
+    }
+
+    function toggleActiveStatus(bool status) external onlyOwner {
+        protocolActivated = status;
+    }
+
+    function cancel(LibOrder.Order memory order) external onlyActive {
         require(_msgSender() == order.maker, "not a maker");
         require(order.salt != 0, "0 salt can't be used");
         bytes32 orderKeyHash = LibOrder.hashKey(order);
@@ -35,7 +45,7 @@ abstract contract UniverseMarketplaceCore is Initializable, OwnableUpgradeable, 
         bytes memory signatureLeft,
         LibOrder.Order memory orderRight,
         bytes memory signatureRight
-    ) external payable {
+    ) external payable onlyActive {
         validateFull(orderLeft, signatureLeft);
         validateFull(orderRight, signatureRight);
         if (orderLeft.taker != address(0)) {

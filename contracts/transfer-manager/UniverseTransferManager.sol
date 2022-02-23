@@ -37,11 +37,11 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
 
     function __UniverseTransferManager_init_unchained(
         uint _daoFee,
-        address _defaultFeeReceiver,
+        address _daoAddress,
         IRoyaltiesProvider _royaltiesRegistry
     ) internal initializer {
         daoFee = _daoFee;
-        defaultFeeReceiver = _defaultFeeReceiver;
+        defaultFeeReceiver = _daoAddress;
         royaltiesRegistry = _royaltiesRegistry;
     }
 
