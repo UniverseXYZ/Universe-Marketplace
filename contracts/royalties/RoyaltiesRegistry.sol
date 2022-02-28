@@ -69,9 +69,6 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
 
         if (royaltiesSetNFT.initialized) {
             nftRoyalties = royaltiesSetNFT.royalties;
-        }
-
-        if (royaltiesSetNFT.initialized || royaltiesSetCollection.initialized ) {
             return (nftRoyalties, collectionRoyalties);
         }
 
