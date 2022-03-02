@@ -177,8 +177,8 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
             (address token, uint tokenId) = abi.decode(matchNft.data, (address, uint));
             (LibPart.Part[] memory fees, LibPart.Part[] memory collectionRoyalties) = royaltiesRegistry.getRoyalties(token, tokenId);
 
-            uint256 collectionFees = transferFees(matchCalculate, collectionRoyalties, amount, from, transferDirection);
-            uint256 nftFees = transferFees(matchCalculate, fees, amount - collectionFees, from, transferDirection);
+            uint256 nftFees = transferFees(matchCalculate, fees, amount, from, transferDirection);
+            uint256 collectionFees = transferFees(matchCalculate, collectionRoyalties, amount - nftFees, from, transferDirection);
             totalAmount = collectionFees + nftFees;
         } else if (matchNft.assetClass == LibERC1155LazyMint.ERC1155_LAZY_ASSET_CLASS) {
             (address token, LibERC1155LazyMint.Mint1155Data memory data) = abi.decode(matchNft.data, (address, LibERC1155LazyMint.Mint1155Data));
@@ -209,8 +209,8 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
         address from,
         bytes4 transferDirection
     ) internal returns (uint256 totalRoyaltiesFee) {
-        uint256 collectionFees = transferFees(matchCalculate, collectionRoyalties, amount.div(matchNftValue), from, transferDirection);
-        uint256 nftFees = transferFees(matchCalculate, nftRoyalties, amount.div(matchNftValue).sub(collectionFees), from, transferDirection);
+        uint256 nftFees = transferFees(matchCalculate, nftRoyalties, amount.div(matchNftValue), from, transferDirection);
+        uint256 collectionFees = transferFees(matchCalculate, collectionRoyalties, amount.div(matchNftValue).sub(nftFees), from, transferDirection);
         return totalRoyaltiesFee = collectionFees.add(nftFees);
     }
 
