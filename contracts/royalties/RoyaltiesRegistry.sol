@@ -2,6 +2,7 @@
 pragma solidity 0.8.11;
 
 import "../interfaces/IRoyaltiesProvider.sol";
+import "../interfaces/IRoyaltiesProviderExternal.sol";
 import "./HasSecondarySaleFees.sol";
 import "./ERC2981Royalties.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
@@ -151,8 +152,8 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
         result = false;
         address providerAddress = royaltiesProviders[token];
         if (providerAddress != address(0x0)) {
-            IRoyaltiesProvider provider = IRoyaltiesProvider(providerAddress);
-            try provider.getRoyalties(token, tokenId) returns (LibPart.Part[] memory royaltiesByProvider, LibPart.Part[] memory collectionFees) {
+            IRoyaltiesProviderExternal provider = IRoyaltiesProviderExternal(providerAddress);
+            try provider.getRoyalties(token, tokenId) returns (LibPart.Part[] memory royaltiesByProvider) {
                 royalties = royaltiesByProvider;
                 result = true;
             } catch {}
