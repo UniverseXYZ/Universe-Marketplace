@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./lib/LibFill.sol";
 import "./lib/LibOrder.sol";
 import "./order-validator/OrderValidator.sol";
@@ -9,7 +10,7 @@ import "./transfer-executor/TransferExecutor.sol";
 import "./interfaces/ITransferManager.sol";
 import "./lib/LibTransfer.sol";
 
-abstract contract UniverseMarketplaceCore is Initializable, OwnableUpgradeable, AssetMatcher, TransferExecutor, OrderValidator, ITransferManager {
+abstract contract UniverseMarketplaceCore is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, AssetMatcher, TransferExecutor, OrderValidator, ITransferManager {
     using SafeMathUpgradeable for uint;
     using LibTransfer for address;
 
@@ -45,7 +46,7 @@ abstract contract UniverseMarketplaceCore is Initializable, OwnableUpgradeable, 
         bytes memory signatureLeft,
         LibOrder.Order memory orderRight,
         bytes memory signatureRight
-    ) external payable onlyActive {
+    ) external payable onlyActive nonReentrant {
         validateFull(orderLeft, signatureLeft);
         validateFull(orderRight, signatureRight);
         if (orderLeft.taker != address(0)) {
