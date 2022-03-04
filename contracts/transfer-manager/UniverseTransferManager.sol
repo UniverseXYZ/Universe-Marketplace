@@ -139,7 +139,7 @@ abstract contract UniverseTransferManager is OwnableUpgradeable, ITransferManage
                 transfer(LibAsset.Asset(matchCalculate, currentAmount), from, revenueSplits[i].account, transferDirection, REVENUE_SPLIT);
             }
         }
-
+        require(sumBps <= 10000, "Revenue splits are too high (>100%)");
         return amount.sub(restValue);
     }
 

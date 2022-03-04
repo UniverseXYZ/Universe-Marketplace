@@ -61,6 +61,11 @@ module.exports = {
       url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [process.env.PRIVATE_KEY],
     },
+    mainnet: {
+      chainId: 1,
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      accounts: [process.env.PRIVATE_KEY]
+    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
