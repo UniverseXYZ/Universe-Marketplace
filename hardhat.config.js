@@ -47,25 +47,6 @@ module.exports = {
         count: 100,
       },
     },
-    ganache: {
-      url: "HTTP://127.0.0.1:7545",
-      accounts: [process.env.PRIVATE_KEY],
-    },
-    ropsten: {
-      chainId: 3,
-      url: `https://ropsten.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: [process.env.PRIVATE_KEY],
-    },
-    rinkeby: {
-      chainId: 4,
-      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: [process.env.PRIVATE_KEY],
-    },
-    mainnet: {
-      chainId: 1,
-      url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: [process.env.PRIVATE_KEY]
-    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
