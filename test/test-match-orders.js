@@ -353,6 +353,64 @@ describe("Match Orders Tests", () => {
     expect(tokenOwner).to.equal(accounts[0].address);
   });
 
+  it("should cancel ERC721 Make Order", async () => {
+    const { universeMarketplace, mockNFT } = await loadFixture(
+      deployedContracts
+    );
+
+    const accounts = await ethers.getSigners();
+
+    await mockNFT.connect(accounts[1]).mint("https://universe.xyz");
+    await mockNFT.connect(accounts[1]).approve(universeMarketplace.address, 1);
+
+    const erc721Qunatity = 1;
+
+    const left = Order(
+      accounts[1].address,
+      Asset(ERC721, encodeToken(mockNFT.address, 1), erc721Qunatity),
+      ZERO_ADDRESS,
+      Asset(ETH, "0x", 200),
+      1,
+      0,
+      0,
+      "0xffffffff",
+      "0x"
+    );
+
+    const right = Order(
+      accounts[0].address,
+      Asset(ETH, "0x", 200),
+      ZERO_ADDRESS,
+      Asset(ERC721, encodeToken(mockNFT.address, 1), erc721Qunatity),
+      1,
+      0,
+      0,
+      "0xffffffff",
+      "0x"
+    );
+
+    const signatureLeft = await sign(
+      left,
+      accounts[1],
+      universeMarketplace.address
+    );
+
+    await expect(
+      universeMarketplace
+        .connect(accounts[1])
+        .cancel(left)
+    ).to.be.emit(universeMarketplace, "Cancel");
+
+    await expect(
+      universeMarketplace
+        .connect(accounts[0])
+        .matchOrders(left, signatureLeft, right, "0x", {
+          value: 200,
+        })
+    ).to.be.reverted;
+  });
+
+
   it("should create successfully match ERC721 BUNDLE with ETH", async () => {
     const { universeMarketplace, mockNFT, mockNFT2 } =
       await loadFixture(deployedContracts);
