@@ -138,6 +138,10 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
                 return new LibPart.Part[](0);
             }
 
+            if (royaltyRecipient == payable(address(0))) {
+                return new LibPart.Part[](0);
+            }
+
             // ERC2981 Supports only one royalty recipient
             LibPart.Part[] memory result = new LibPart.Part[](1);
             result[0].value = royaltyValue;
@@ -158,6 +162,16 @@ contract RoyaltiesRegistry is IRoyaltiesProvider, OwnableUpgradeable {
                 result = true;
             } catch {}
         }
+    }
+
+    function readCollectionRoyalties(address token) external view returns (LibPart.Part[] memory collectionRoyalties) {
+        RoyaltiesSet memory royaltiesSetCollection = royaltiesByToken[token];
+
+        if (royaltiesSetCollection.initialized) {
+            collectionRoyalties = royaltiesSetCollection.royalties;
+        }
+
+        return collectionRoyalties;
     }
 
 }

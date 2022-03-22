@@ -895,6 +895,94 @@ describe("Match Orders Tests", () => {
     expect(tokenOwner).to.equal(accounts[1].address);
   });
 
+  it("should recognize ERC2981Royalties interface through the Royalties registry - without failure when there are no royalties", async () => {
+    const { universeMarketplace, mockNFT4 } = await loadFixture(
+      deployedContracts
+    );
+
+    const accounts = await ethers.getSigners();
+
+    await mockNFT4
+      .connect(accounts[0])
+      .mint("https://universe.xyz", 0, ethers.constants.AddressZero);
+    await mockNFT4.connect(accounts[0]).approve(universeMarketplace.address, 1);
+
+    const encodedPaymentSplitsData = await universeMarketplace.encodeOrderData([
+      [
+        [accounts[2].address, 1000],
+        [accounts[3].address, 2000],
+        [accounts[4].address, 2000],
+      ],
+    ]);
+
+    const erc721Qunatity = 1;
+
+    const left = Order(
+      accounts[1].address,
+      Asset(ETH, "0x", 200),
+      ZERO_ADDRESS,
+      Asset(ERC721, encodeToken(mockNFT4.address, 1), erc721Qunatity),
+      1,
+      0,
+      0,
+      "0xffffffff",
+      "0x"
+    );
+
+    const right = Order(
+      accounts[0].address,
+      Asset(ERC721, encodeToken(mockNFT4.address, 1), erc721Qunatity),
+      ZERO_ADDRESS,
+      Asset(ETH, "0x", 200),
+      1,
+      0,
+      0,
+      "0x0b35c423",
+      encodedPaymentSplitsData
+    );
+
+    const signatureLeft = await sign(
+      left,
+      accounts[1],
+      universeMarketplace.address
+    );
+
+    const signatureRight = await sign(
+      right,
+      accounts[0],
+      universeMarketplace.address
+    );
+
+    const balanceBefore = await ethers.provider.getBalance(accounts[0].address);
+    const balanceRoyaltyReceiverBefore = await ethers.provider.getBalance(
+      accounts[20].address
+    );
+
+    await expect(
+      universeMarketplace
+        .connect(accounts[1])
+        .matchOrders(left, "0x", right, signatureRight, {
+          value: 200,
+        })
+    ).to.be.emit(universeMarketplace, "Match");
+
+    const balanceAfter = await ethers.provider.getBalance(accounts[0].address);
+    const balanceRoyaltyReceiverAfter = await ethers.provider.getBalance(
+      accounts[20].address
+    );
+
+    expect(balanceAfter.sub(balanceBefore)).to.equal(75);
+    expect(
+      balanceRoyaltyReceiverAfter.sub(balanceRoyaltyReceiverBefore)
+    ).to.equal(0);
+
+    const mockNFTBalance = await mockNFT4.balanceOf(accounts[1].address);
+    expect(mockNFTBalance).to.equal(1);
+
+    const tokenOwner = await mockNFT4.ownerOf(1);
+    expect(tokenOwner).to.equal(accounts[1].address);
+  });
+
   it("should successfully Deduct Multiple NFT && Collection Level Royalties from the Seller Revenue", async () => {
     const { universeMarketplace, mockNFT2, royaltiesRegistry } = await loadFixture(
       deployedContracts
